@@ -3,7 +3,7 @@ import z from '@deepseek-ai/schemastery'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands'
 import { createUserMessage, type ContentBlock } from '@deepseek-ai/dsh-llm'
-import type { SessionEvent } from '@deepseek-ai/dsh-session'
+import type {} from '@deepseek-ai/dsh-session-projection'
 import type {} from '@deepseek-ai/dsh-session-title'
 import type {} from '@deepseek-ai/dsh-settings'
 import type { SubagentResult, SubagentRun } from '@deepseek-ai/dsh-subagent'
@@ -23,7 +23,15 @@ import { renderCouncilResult, renderFailureAudit } from './protocol.js'
 import type { CatalogFailure, ModelDirectory, ModelRef } from './types.js'
 
 export const name = 'dsh-council'
-export const inject = ['commands', 'llm', 'userQuestions', 'sessionTitle', 'settings', 'subagents']
+export const inject = [
+  'commands',
+  'llm',
+  'userQuestions',
+  'sessionProjections',
+  'sessionTitle',
+  'settings',
+  'subagents',
+]
 
 export interface Config extends CouncilConfig {}
 
@@ -43,9 +51,15 @@ interface BlankRetention {
   consumed: boolean
 }
 
-/** Whether this command entered a Session that already owns an ordinary turn. */
-function hasStartedTurn(agent: Agent): boolean {
-  return agent.session.snapshotEvents().some((event: SessionEvent) => event.type === 'turn/start')
+/** Read the same blank-session projection that drives DSH's session list. */
+function isBlankSession(ctx: Context, agent: Agent): boolean {
+  const values = ctx.sessionProjections.snapshot(agent.session).values as Record<string, unknown>
+  const metadata = values.sessionListMetadata
+  if (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata)
+    || typeof (metadata as Record<string, unknown>).blank !== 'boolean') {
+    throw new Error('dsh-council: sessionListMetadata projection is unavailable')
+  }
+  return (metadata as { blank: boolean }).blank
 }
 
 /** Promote a provisional New Session without issuing another model request. */
@@ -200,7 +214,7 @@ async function executeCouncil(
 ): Promise<CommandResult> {
   if (invocation.rawInput.trim() !== '') return { kind: 'error', text: copy.usage }
   const signal = AbortSignal.any([invocation.signal, lifecycleSignal])
-  const startedBlank = !hasStartedTurn(invocation.agent)
+  const startedBlank = isBlankSession(ctx, invocation.agent)
   let result: CommandResult
   try {
     const provider = ctx.subagents.getProvider(config.subagentProvider)

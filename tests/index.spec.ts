@@ -49,6 +49,10 @@ type PreStepListener = (
   next: () => Promise<{ kind: 'enter'; messages: Array<{ id?: string }> }>,
 ) => Promise<{ kind: string; messages?: Array<{ id?: string }> }>
 type SettingsListener = (namespace: string) => void
+type TestAgent = Agent & {
+  readonly recordedEvents: Array<{ type: string }>
+  session: Agent['session'] & { blank: boolean }
+}
 
 function harness(
   ask = async () => pickerAnswers,
@@ -84,6 +88,12 @@ function harness(
       rename(_session: unknown, title: string) { renamed.push(title) },
     },
     settings: { get: () => ({ preference: locale }) },
+    sessionProjections: {
+      snapshot: (session: { blank: boolean }) => ({
+        asOfSeq: -1,
+        values: { sessionListMetadata: { blank: session.blank, lastPromptAt: null } },
+      }),
+    },
     subagents: {
       getProvider: () => provider ?? undefined,
       async start(_provider: string, request: SubagentStartRequest): Promise<SubagentRun> {
@@ -138,15 +148,17 @@ function harness(
   }
 }
 
-function agentWithHistory(blank = false, listener?: () => PreStepListener | undefined): Agent {
+function agentWithHistory(blank = false, listener?: () => PreStepListener | undefined): TestAgent {
   const events: Array<{ type: string }> = blank ? [] : [{ type: 'turn/start' }]
   let idle = Promise.resolve()
   const agent = {
     id: blank ? 'blank-root' : 'root',
-    session: { snapshotEvents: () => events },
+    session: { blank },
+    recordedEvents: events,
     ctx: {},
     followup(message: unknown) {
       events.push({ type: 'turn/start' })
+      agent.session.blank = false
       idle = Promise.resolve(listener?.()?.(
         { agent: agent as unknown as Agent },
         () => Promise.resolve({ kind: 'enter', messages: [message as { id?: string }] }),
@@ -159,7 +171,7 @@ function agentWithHistory(blank = false, listener?: () => PreStepListener | unde
     },
     whenIdle: () => idle,
   }
-  return agent as unknown as Agent
+  return agent as unknown as TestAgent
 }
 
 const existingAgent = agentWithHistory()
@@ -220,8 +232,8 @@ describe('DSH command integration', () => {
     const result = await test.command()?.handler(invocation('', blankAgent))
     expect(result).toMatchObject({ kind: 'success' })
     expect(test.renamed).toEqual(['Council'])
-    expect(blankAgent.session.snapshotEvents().some(event => event.type === 'turn/start')).toBe(true)
-    expect(blankAgent.session.snapshotEvents().some(event => event.type === 'step/start')).toBe(false)
+    expect(blankAgent.recordedEvents.some(event => event.type === 'turn/start')).toBe(true)
+    expect(blankAgent.recordedEvents.some(event => event.type === 'step/start')).toBe(false)
     expect(test.childRequests).toHaveLength(4)
   })
 
