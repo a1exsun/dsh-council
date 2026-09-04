@@ -5,6 +5,7 @@ import type { CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands
 import { createUserMessage, type ContentBlock } from '@deepseek-ai/dsh-llm'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-title'
+import type {} from '@deepseek-ai/dsh-settings'
 import type { SubagentResult, SubagentRun } from '@deepseek-ai/dsh-subagent'
 import type { AskUserQuestionItem } from '@deepseek-ai/dsh-user-questions'
 import {
@@ -17,11 +18,12 @@ import {
   type CouncilQuestion,
   type CouncilRuntime,
 } from './council.js'
+import { copyForSettings, type CouncilCopy } from './locales.js'
 import { renderCouncilResult, renderFailureAudit } from './protocol.js'
 import type { CatalogFailure, ModelDirectory, ModelRef } from './types.js'
 
 export const name = 'dsh-council'
-export const inject = ['commands', 'llm', 'userQuestions', 'sessionTitle', 'subagents']
+export const inject = ['commands', 'llm', 'userQuestions', 'sessionTitle', 'settings', 'subagents']
 
 export interface Config extends CouncilConfig {}
 
@@ -35,7 +37,6 @@ export const Config: z<Config> = z.object({
 })
 
 const WEB_TOOLS = ['web_search', 'web_fetch'] as const
-const USAGE = 'Usage: /council (no arguments)'
 
 interface BlankRetention {
   readonly messageId: string
@@ -52,6 +53,7 @@ async function retainBlankCommandSession(
   ctx: Context,
   agent: Agent,
   pending: Map<string, BlankRetention>,
+  copy: CouncilCopy,
 ): Promise<void> {
   const message = createUserMessage({
     content: [],
@@ -67,12 +69,17 @@ async function retainBlankCommandSession(
     pending.delete(agentId)
   }
   if (!retention.consumed) throw new Error('dsh-council: failed to activate the blank command session')
-  ctx.sessionTitle.rename(agent.session, 'Council')
+  ctx.sessionTitle.rename(agent.session, copy.sessionTitle)
 }
 
-function messageOf(error: unknown): string {
+function messageOf(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim() !== '') return error.message
-  return 'unknown failure'
+  return fallback
+}
+
+function errorCode(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null || !('code' in error)) return undefined
+  return typeof error.code === 'string' ? error.code : undefined
 }
 
 function textOf(result: SubagentResult): string {
@@ -82,7 +89,7 @@ function textOf(result: SubagentResult): string {
     .join('')
 }
 
-async function discover(ctx: Context, signal: AbortSignal): Promise<ModelDirectory> {
+async function discover(ctx: Context, signal: AbortSignal, copy: CouncilCopy): Promise<ModelDirectory> {
   signal.throwIfAborted()
   const providers = ctx.llm.listProviders()
   const settlements = await Promise.allSettled(providers.map(provider => ctx.llm.listModels(provider.id)))
@@ -93,7 +100,7 @@ async function discover(ctx: Context, signal: AbortSignal): Promise<ModelDirecto
     const provider = providers[index]
     if (provider === undefined) return
     if (settlement.status === 'rejected') {
-      failures.push({ provider: provider.id, message: messageOf(settlement.reason) })
+      failures.push({ provider: provider.id, message: messageOf(settlement.reason, copy.unknownFailure) })
       return
     }
     for (const model of settlement.value) {
@@ -150,9 +157,9 @@ async function settleRun(run: SubagentRun): Promise<ChildOutcome> {
   }
 }
 
-function runtimeFor(ctx: Context, parent: Agent, provider: string): CouncilRuntime {
+function runtimeFor(ctx: Context, parent: Agent, provider: string, copy: CouncilCopy): CouncilRuntime {
   return {
-    discover: signal => discover(ctx, signal),
+    discover: signal => discover(ctx, signal, copy),
     async ask(questions, signal) {
       const result = await ctx.userQuestions.ask({
         agent: parent,
@@ -189,36 +196,46 @@ async function executeCouncil(
   invocation: CommandInvocation,
   lifecycleSignal: AbortSignal,
   blankRetentions: Map<string, BlankRetention>,
+  copy: CouncilCopy,
 ): Promise<CommandResult> {
-  if (invocation.rawInput.trim() !== '') return { kind: 'error', text: USAGE }
+  if (invocation.rawInput.trim() !== '') return { kind: 'error', text: copy.usage }
   const signal = AbortSignal.any([invocation.signal, lifecycleSignal])
   const startedBlank = !hasStartedTurn(invocation.agent)
   let result: CommandResult
   try {
     const provider = ctx.subagents.getProvider(config.subagentProvider)
     if (provider === undefined) {
-      throw new Error(`subagent provider "${config.subagentProvider}" is not registered`)
+      throw new Error(copy.providerMissing(config.subagentProvider))
     }
     if (!provider.capabilities.toolFilter
       || !provider.capabilities.persona
       || !provider.capabilities.outputSchema) {
-      throw new Error(`subagent provider "${config.subagentProvider}" lacks required capabilities`)
+      throw new Error(copy.providerCapabilities(config.subagentProvider))
     }
-    const council = await runCouncil(runtimeFor(ctx, invocation.agent, config.subagentProvider), config, signal)
-    result = { kind: 'success', text: renderCouncilResult(council) }
+    const council = await runCouncil(
+      runtimeFor(ctx, invocation.agent, config.subagentProvider, copy),
+      config,
+      signal,
+      copy,
+    )
+    result = { kind: 'success', text: renderCouncilResult(council, copy) }
   } catch (error: unknown) {
+    const code = errorCode(error)
+    if (code === 'ASK_CANCELLED' || code === 'ASK_ABORTED') {
+      return { kind: 'error', text: copy.canceled }
+    }
     if (error instanceof CouncilRunError) {
       result = {
         kind: 'error',
-        text: renderFailureAudit(error.message, error.directoryFailures, error.failures),
+        text: renderFailureAudit(error.message, error.directoryFailures, error.failures, copy),
       }
     } else if (signal.aborted) {
-      return { kind: 'error', text: 'Council 已取消。' }
+      return { kind: 'error', text: copy.canceled }
     } else {
-      result = { kind: 'error', text: `Council 失败：${messageOf(error)}` }
+      result = { kind: 'error', text: copy.failed(messageOf(error, copy.unknownFailure)) }
     }
   }
-  if (startedBlank) await retainBlankCommandSession(ctx, invocation.agent, blankRetentions)
+  if (startedBlank) await retainBlankCommandSession(ctx, invocation.agent, blankRetentions, copy)
   return result
 }
 
@@ -242,12 +259,13 @@ export function apply(ctx: Context, config: Config): void {
     return { ...decision, messages: [] }
   }, { global: true })
   const handler = (invocation: CommandInvocation): Promise<CommandResult> => {
+    const copy = copyForSettings(ctx.settings.get('locale'))
     const agentId = String(invocation.agent.id)
     if (activeAgents.has(agentId)) {
-      return Promise.resolve({ kind: 'error', text: '当前会话已有 Council 正在运行。' })
+      return Promise.resolve({ kind: 'error', text: copy.alreadyRunning })
     }
     activeAgents.add(agentId)
-    const operation = executeCouncil(ctx, config, invocation, lifecycle.signal, blankRetentions)
+    const operation = executeCouncil(ctx, config, invocation, lifecycle.signal, blankRetentions, copy)
     activeOperations.add(operation)
     const retire = (): void => {
       activeAgents.delete(agentId)
@@ -262,12 +280,25 @@ export function apply(ctx: Context, config: Config): void {
       lifecycle.abort(new Error('dsh-council plugin disposed'))
       await Promise.allSettled(activeOperations)
     }
-    yield ctx.commands.register({
-      name: 'council',
-      description: 'Run an anonymous multi-model council',
-      recordInput: false,
-      handler,
+    let disposeCommand = (): void => {}
+    const registerCommand = (): void => {
+      disposeCommand()
+      const copy = copyForSettings(ctx.settings.get('locale'))
+      disposeCommand = ctx.commands.register({
+        name: 'council',
+        description: copy.commandDescription,
+        recordInput: false,
+        handler,
+      })
+    }
+    registerCommand()
+    const disposeLocaleWatch = ctx.on('settings/updated', (namespace) => {
+      if (String(namespace) === 'locale') registerCommand()
     })
+    yield () => {
+      disposeLocaleWatch()
+      disposeCommand()
+    }
   }, 'dsh-council lifecycle')
 }
 

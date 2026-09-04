@@ -1,5 +1,7 @@
 # dsh-council
 
+[English](README.md) | [中文](README.zh.md)
+
 `dsh-council` is a DeepSeek Harness bundle that runs an anonymous, multi-model deliberation from the existing chat composer.
 
 Type `/council` to select answerers, reviewers, a final arbiter, and the question. Every invocation reads the live DSH provider/model directory instead of keeping a separate model configuration.
@@ -16,12 +18,16 @@ When `/council` starts from the provisional New Session screen, the plugin retai
 
 The pipeline follows OpenRouter Fusion's parallel panel, structured comparison, and final synthesis, with Karpathy LLM Council's anonymous peer review and ranking.
 
+## Languages
+
+The command follows DSH's live `locale.preference` setting. Chinese (`zh` and `zh-*`) and English are supported across command discovery, selection questions, validation and failure messages, child labels, model personas and prompts, audit output, and blank-session titles. A locale without a Council dictionary follows DSH's terminal English fallback. Changing the DSH language updates the `/council` description immediately; a run already in progress keeps the language it started with so one result never mixes locales.
+
 ## Development
 
 Requirements: Node.js `^22.19.0 || >=24.0.0` and pnpm `11.7.0`.
 
 ```sh
-pnpm install --ignore-workspace
+pnpm install
 pnpm test
 pnpm typecheck
 pnpm build

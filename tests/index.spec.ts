@@ -48,15 +48,19 @@ type PreStepListener = (
   payload: { agent: Agent },
   next: () => Promise<{ kind: 'enter'; messages: Array<{ id?: string }> }>,
 ) => Promise<{ kind: string; messages?: Array<{ id?: string }> }>
+type SettingsListener = (namespace: string) => void
 
 function harness(
   ask = async () => pickerAnswers,
   provider: { capabilities: { outputSchema: boolean; depthLimit: boolean; toolFilter: boolean; persona: boolean } } | null = {
     capabilities: { outputSchema: true, depthLimit: true, toolFilter: true, persona: true },
   },
+  initialLocale: 'en' | 'zh' = 'en',
 ) {
   let command: CommandDefinition | undefined
   let preStep: PreStepListener | undefined
+  let settingsUpdated: SettingsListener | undefined
+  let locale = initialLocale
   const childRequests: SubagentStartRequest[] = []
   const disposed: string[] = []
   const renamed: string[] = []
@@ -79,14 +83,20 @@ function harness(
     sessionTitle: {
       rename(_session: unknown, title: string) { renamed.push(title) },
     },
+    settings: { get: () => ({ preference: locale }) },
     subagents: {
       getProvider: () => provider ?? undefined,
       async start(_provider: string, request: SubagentStartRequest): Promise<SubagentRun> {
         childRequests.push(request)
-        const label = request.label ?? ''
-        const structured = label.startsWith('Council review')
-          ? review
-          : label.startsWith('Council arbiter') ? arbiter : undefined
+        const properties = request.outputSchema?.properties
+        const ranking = properties?.ranking?.items?.enum?.filter((item): item is string => typeof item === 'string')
+        const structured = ranking !== undefined
+          ? {
+              ...review,
+              evaluations: ranking.map(answerId => ({ answerId, strengths: ['good'], weaknesses: [] })),
+              ranking,
+            }
+          : properties?.answerMarkdown === undefined ? undefined : arbiter
         const id = `child-${childRequests.length}`
         return {
           id: id as SubagentRun['id'],
@@ -100,9 +110,13 @@ function harness(
         }
       },
     },
-    on(event: string, listener: PreStepListener) {
-      if (event === 'agent/pre-step') preStep = listener
-      return () => { preStep = undefined }
+    on(event: string, listener: PreStepListener | SettingsListener) {
+      if (event === 'agent/pre-step') preStep = listener as PreStepListener
+      if (event === 'settings/updated') settingsUpdated = listener as SettingsListener
+      return () => {
+        if (event === 'agent/pre-step') preStep = undefined
+        if (event === 'settings/updated') settingsUpdated = undefined
+      }
     },
     effect(factory: () => Generator<unknown, void, unknown>) {
       const iterator = factory()
@@ -117,6 +131,10 @@ function harness(
     disposed,
     renamed,
     preStep: () => preStep,
+    setLocale(next: 'en' | 'zh') {
+      locale = next
+      settingsUpdated?.('locale')
+    },
   }
 }
 
@@ -182,7 +200,7 @@ describe('DSH command integration', () => {
     const first = command?.handler(invocation())
     await expect(command?.handler(invocation())).resolves.toEqual({
       kind: 'error',
-      text: '当前会话已有 Council 正在运行。',
+      text: 'A Council run is already active in this session.',
     })
     release?.(pickerAnswers)
     await expect(first).resolves.toMatchObject({ kind: 'success' })
@@ -192,7 +210,7 @@ describe('DSH command integration', () => {
     const test = harness(async () => pickerAnswers, null)
     await expect(test.command()?.handler(invocation())).resolves.toEqual({
       kind: 'error',
-      text: 'Council 失败：subagent provider "spawn" is not registered',
+      text: 'Council failed: subagent provider "spawn" is not registered',
     })
   })
 
@@ -205,5 +223,28 @@ describe('DSH command integration', () => {
     expect(blankAgent.session.snapshotEvents().some(event => event.type === 'turn/start')).toBe(true)
     expect(blankAgent.session.snapshotEvents().some(event => event.type === 'step/start')).toBe(false)
     expect(test.childRequests).toHaveLength(4)
+  })
+
+  it('uses the live DSH locale for command metadata, workflow copy, and blank-session title', async () => {
+    const test = harness(async () => pickerAnswers, undefined, 'zh')
+    expect(test.command()?.description).toBe('运行匿名多模型议会')
+    const blankAgent = agentWithHistory(true, test.preStep)
+    const result = await test.command()?.handler(invocation('', blankAgent))
+    expect(result?.text).toContain('# 议会裁决')
+    expect(test.childRequests[0]?.label).toContain('议会回答')
+    expect(test.childRequests[0]?.persona).toContain('简体中文')
+    expect(test.renamed).toEqual(['议会'])
+
+    test.setLocale('en')
+    expect(test.command()?.description).toBe('Run an anonymous multi-model council')
+  })
+
+  it.each([
+    ['en' as const, 'Council was canceled.'],
+    ['zh' as const, '议会已取消。'],
+  ])('localizes DSH question cancellation in %s', async (locale, expected) => {
+    const cancelled = Object.assign(new Error('the user cancelled ask_user_question'), { code: 'ASK_CANCELLED' })
+    const test = harness(async () => Promise.reject(cancelled), undefined, locale)
+    await expect(test.command()?.handler(invocation())).resolves.toEqual({ kind: 'error', text: expected })
   })
 })

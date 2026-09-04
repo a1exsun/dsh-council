@@ -8,6 +8,7 @@ import {
   reviewPrompt,
   shuffle,
 } from '../src/protocol.js'
+import { localeCopies } from '../src/locales.js'
 import type { AnswerRecord, CouncilResult, ModelRef, ReviewRecord } from '../src/types.js'
 
 const model = (key: string): ModelRef => {
@@ -66,8 +67,8 @@ describe('anonymous protocol', () => {
   ]
 
   it('does not place provider or model identities in reviewer and arbiter prompts', () => {
-    const review = reviewPrompt('Question', answers)
-    const arbiter = arbiterPrompt('Question', answers, reviews, aggregateRankings(reviews))
+    const review = reviewPrompt('Question', answers, localeCopies.en)
+    const arbiter = arbiterPrompt('Question', answers, reviews, aggregateRankings(reviews), localeCopies.en)
     for (const prompt of [review, arbiter]) {
       expect(prompt).not.toContain('secret-provider')
       expect(prompt).not.toContain('other-provider')
@@ -115,7 +116,7 @@ describe('anonymous protocol', () => {
       },
       failures: [],
     }
-    const rendered = renderCouncilResult(result)
+    const rendered = renderCouncilResult(result, localeCopies.en)
     expect(rendered).toContain('secret-provider/secret-model')
     expect(rendered).toContain('arbiter/final')
     expect(rendered).toContain('Final answer')

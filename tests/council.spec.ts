@@ -9,6 +9,7 @@ import {
   type CouncilConfig,
   type CouncilRuntime,
 } from '../src/council.js'
+import { localeCopies } from '../src/locales.js'
 import type { ModelDirectory, ModelRef } from '../src/types.js'
 
 const config: CouncilConfig = {
@@ -19,6 +20,7 @@ const config: CouncilConfig = {
   runTimeoutMs: 900_000,
   subagentProvider: 'spawn',
 }
+const copy = localeCopies.en
 
 function model(key: string): ModelRef {
   const [provider = '', id = ''] = key.split('/')
@@ -96,23 +98,23 @@ describe('selection', () => {
     const questions = selectionQuestions({
       models,
       failures: [{ provider: 'broken', message: 'offline' }],
-    })
+    }, copy)
     expect(questions.map(question => question.id)).toEqual(['answerers', 'reviewers', 'arbiter', 'question'])
     expect(questions[0]?.detail).toContain('broken')
   })
 
   it('allows cross-role reuse but rejects custom model routes', () => {
-    expect(parseSelection(directory, pickerAnswers).arbiter.key).toBe('p/a')
+    expect(parseSelection(directory, pickerAnswers, copy).arbiter.key).toBe('p/a')
     expect(() => parseSelection(directory, pickerAnswers.map(answer => answer.id === 'reviewers'
       ? { ...answer, custom: 'p/unknown' }
-      : answer))).toThrow(/不能手写路由/)
+      : answer), copy)).toThrow(/custom routes/)
   })
 })
 
 describe('council orchestration', () => {
   it('runs each stage in parallel, enforces stage barriers, and keeps final inputs anonymous', async () => {
     const { runtime, calls } = successfulRuntime()
-    const result = await runCouncil(runtime, config, new AbortController().signal)
+    const result = await runCouncil(runtime, config, new AbortController().signal, copy)
     expect(calls.map(call => call.stage)).toEqual(['answer', 'answer', 'review', 'review', 'arbiter'])
     expect(calls.filter(call => call.stage === 'answer').every(call => call.maxTokens === 16_384)).toBe(true)
     expect(calls.filter(call => call.stage === 'review').every(call => call.outputSchema !== undefined)).toBe(true)
@@ -143,7 +145,7 @@ describe('council orchestration', () => {
         return { stopReason: 'completed', text: '', structured: arbiter }
       },
     })
-    const result = await runCouncil(runtime, config, new AbortController().signal)
+    const result = await runCouncil(runtime, config, new AbortController().signal, copy)
     expect(result.answers).toHaveLength(1)
     expect(result.reviews).toHaveLength(1)
     expect(result.failures).toHaveLength(2)
@@ -155,8 +157,8 @@ describe('council orchestration', () => {
         ? { stopReason: 'error', text: '' }
         : { stopReason: 'completed', text: '', structured: arbiter },
     })
-    await expect(runCouncil(runtime, config, new AbortController().signal))
-      .rejects.toMatchObject({ name: 'CouncilRunError', message: '没有回答人成功返回非空答案。' })
+    await expect(runCouncil(runtime, config, new AbortController().signal, copy))
+      .rejects.toMatchObject({ name: 'CouncilRunError', message: 'No answerer returned a successful non-empty answer.' })
   })
 
   it('fails when the arbiter returns no structured result', async () => {
@@ -165,7 +167,7 @@ describe('council orchestration', () => {
     base.runtime.runChild = async request => request.stage === 'arbiter'
       ? { stopReason: 'completed', text: 'plain text only' }
       : original(request)
-    await expect(runCouncil(base.runtime, config, new AbortController().signal))
-      .rejects.toMatchObject({ name: 'CouncilRunError', message: '裁决人未返回有效裁决。' })
+    await expect(runCouncil(base.runtime, config, new AbortController().signal, copy))
+      .rejects.toMatchObject({ name: 'CouncilRunError', message: 'The arbiter did not return a valid decision.' })
   })
 })
