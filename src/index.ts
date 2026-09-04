@@ -2,7 +2,9 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands'
-import type { ContentBlock } from '@deepseek-ai/dsh-llm'
+import { createUserMessage, type ContentBlock } from '@deepseek-ai/dsh-llm'
+import type { SessionEvent } from '@deepseek-ai/dsh-session'
+import type {} from '@deepseek-ai/dsh-session-title'
 import type { SubagentResult, SubagentRun } from '@deepseek-ai/dsh-subagent'
 import type { AskUserQuestionItem } from '@deepseek-ai/dsh-user-questions'
 import {
@@ -19,7 +21,7 @@ import { renderCouncilResult, renderFailureAudit } from './protocol.js'
 import type { CatalogFailure, ModelDirectory, ModelRef } from './types.js'
 
 export const name = 'dsh-council'
-export const inject = ['commands', 'llm', 'userQuestions', 'subagents']
+export const inject = ['commands', 'llm', 'userQuestions', 'sessionTitle', 'subagents']
 
 export interface Config extends CouncilConfig {}
 
@@ -34,6 +36,39 @@ export const Config: z<Config> = z.object({
 
 const WEB_TOOLS = ['web_search', 'web_fetch'] as const
 const USAGE = 'Usage: /council (no arguments)'
+
+interface BlankRetention {
+  readonly messageId: string
+  consumed: boolean
+}
+
+/** Whether this command entered a Session that already owns an ordinary turn. */
+function hasStartedTurn(agent: Agent): boolean {
+  return agent.session.snapshotEvents().some((event: SessionEvent) => event.type === 'turn/start')
+}
+
+/** Promote a provisional New Session without issuing another model request. */
+async function retainBlankCommandSession(
+  ctx: Context,
+  agent: Agent,
+  pending: Map<string, BlankRetention>,
+): Promise<void> {
+  const message = createUserMessage({
+    content: [],
+    source: { kind: 'plugin', plugin: name },
+  })
+  const retention: BlankRetention = { messageId: String(message.id), consumed: false }
+  const agentId = String(agent.id)
+  pending.set(agentId, retention)
+  try {
+    agent.followup(message)
+    await agent.whenIdle()
+  } finally {
+    pending.delete(agentId)
+  }
+  if (!retention.consumed) throw new Error('dsh-council: failed to activate the blank command session')
+  ctx.sessionTitle.rename(agent.session, 'Council')
+}
 
 function messageOf(error: unknown): string {
   if (error instanceof Error && error.message.trim() !== '') return error.message
@@ -153,9 +188,12 @@ async function executeCouncil(
   config: Config,
   invocation: CommandInvocation,
   lifecycleSignal: AbortSignal,
+  blankRetentions: Map<string, BlankRetention>,
 ): Promise<CommandResult> {
   if (invocation.rawInput.trim() !== '') return { kind: 'error', text: USAGE }
   const signal = AbortSignal.any([invocation.signal, lifecycleSignal])
+  const startedBlank = !hasStartedTurn(invocation.agent)
+  let result: CommandResult
   try {
     const provider = ctx.subagents.getProvider(config.subagentProvider)
     if (provider === undefined) {
@@ -166,18 +204,22 @@ async function executeCouncil(
       || !provider.capabilities.outputSchema) {
       throw new Error(`subagent provider "${config.subagentProvider}" lacks required capabilities`)
     }
-    const result = await runCouncil(runtimeFor(ctx, invocation.agent, config.subagentProvider), config, signal)
-    return { kind: 'success', text: renderCouncilResult(result) }
+    const council = await runCouncil(runtimeFor(ctx, invocation.agent, config.subagentProvider), config, signal)
+    result = { kind: 'success', text: renderCouncilResult(council) }
   } catch (error: unknown) {
     if (error instanceof CouncilRunError) {
-      return {
+      result = {
         kind: 'error',
         text: renderFailureAudit(error.message, error.directoryFailures, error.failures),
       }
+    } else if (signal.aborted) {
+      return { kind: 'error', text: 'Council 已取消。' }
+    } else {
+      result = { kind: 'error', text: `Council 失败：${messageOf(error)}` }
     }
-    if (signal.aborted) return { kind: 'error', text: 'Council 已取消。' }
-    return { kind: 'error', text: `Council 失败：${messageOf(error)}` }
   }
+  if (startedBlank) await retainBlankCommandSession(ctx, invocation.agent, blankRetentions)
+  return result
 }
 
 export function apply(ctx: Context, config: Config): void {
@@ -186,14 +228,26 @@ export function apply(ctx: Context, config: Config): void {
   }
   const activeAgents = new Set<string>()
   const activeOperations = new Set<Promise<CommandResult>>()
+  const blankRetentions = new Map<string, BlankRetention>()
   const lifecycle = new AbortController()
+  // A root listener is required: preset-scoped listeners added after Agent
+  // creation do not join the already-mounted pre-step chain.
+  ctx.on('agent/pre-step', async ({ agent }, next) => {
+    const decision = await next()
+    const retention = blankRetentions.get(String(agent.id))
+    if (retention === undefined || decision.kind === 'reject') return decision
+    if (!decision.messages.some(message => String(message.id) === retention.messageId)) return decision
+    retention.consumed = true
+    blankRetentions.delete(String(agent.id))
+    return { ...decision, messages: [] }
+  }, { global: true })
   const handler = (invocation: CommandInvocation): Promise<CommandResult> => {
     const agentId = String(invocation.agent.id)
     if (activeAgents.has(agentId)) {
       return Promise.resolve({ kind: 'error', text: '当前会话已有 Council 正在运行。' })
     }
     activeAgents.add(agentId)
-    const operation = executeCouncil(ctx, config, invocation, lifecycle.signal)
+    const operation = executeCouncil(ctx, config, invocation, lifecycle.signal, blankRetentions)
     activeOperations.add(operation)
     const retire = (): void => {
       activeAgents.delete(agentId)

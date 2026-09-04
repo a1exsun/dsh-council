@@ -12,6 +12,8 @@ Type `/council` to select answerers, reviewers, a final arbiter, and the questio
 
 Each role runs as a fresh DSH `spawn` subagent. The child can use `web_search` and `web_fetch`, but cannot use shell, filesystem, delegation, or council tools. The current conversation history is not copied into the children. Raw work remains available in DSH's ordinary subagent sessions; the command result contains the final answer and a compact audit summary.
 
+When `/council` starts from the provisional New Session screen, the plugin retains that Session with a model-free empty turn and names it `Council`. The command result therefore remains visible in the sidebar and survives a page refresh without an extra main-agent completion. Existing conversations keep their current title and history unchanged.
+
 The pipeline follows OpenRouter Fusion's parallel panel, structured comparison, and final synthesis, with Karpathy LLM Council's anonymous peer review and ranking.
 
 ## Development

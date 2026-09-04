@@ -44,6 +44,11 @@ const arbiter = {
   confidenceNotes: 'High confidence',
 }
 
+type PreStepListener = (
+  payload: { agent: Agent },
+  next: () => Promise<{ kind: 'enter'; messages: Array<{ id?: string }> }>,
+) => Promise<{ kind: string; messages?: Array<{ id?: string }> }>
+
 function harness(
   ask = async () => pickerAnswers,
   provider: { capabilities: { outputSchema: boolean; depthLimit: boolean; toolFilter: boolean; persona: boolean } } | null = {
@@ -51,8 +56,10 @@ function harness(
   },
 ) {
   let command: CommandDefinition | undefined
+  let preStep: PreStepListener | undefined
   const childRequests: SubagentStartRequest[] = []
   const disposed: string[] = []
+  const renamed: string[] = []
   const ctx = {
     commands: {
       register(definition: CommandDefinition) {
@@ -69,6 +76,9 @@ function harness(
       ],
     },
     userQuestions: { ask },
+    sessionTitle: {
+      rename(_session: unknown, title: string) { renamed.push(title) },
+    },
     subagents: {
       getProvider: () => provider ?? undefined,
       async start(_provider: string, request: SubagentStartRequest): Promise<SubagentRun> {
@@ -90,6 +100,10 @@ function harness(
         }
       },
     },
+    on(event: string, listener: PreStepListener) {
+      if (event === 'agent/pre-step') preStep = listener
+      return () => { preStep = undefined }
+    },
     effect(factory: () => Generator<unknown, void, unknown>) {
       const iterator = factory()
       for (let step = iterator.next(); !step.done; step = iterator.next()) { /* mount effects */ }
@@ -101,11 +115,37 @@ function harness(
     command: () => command,
     childRequests,
     disposed,
+    renamed,
+    preStep: () => preStep,
   }
 }
 
-const agent = { id: 'root' } as Agent
-const invocation = (rawInput = '') => ({
+function agentWithHistory(blank = false, listener?: () => PreStepListener | undefined): Agent {
+  const events: Array<{ type: string }> = blank ? [] : [{ type: 'turn/start' }]
+  let idle = Promise.resolve()
+  const agent = {
+    id: blank ? 'blank-root' : 'root',
+    session: { snapshotEvents: () => events },
+    ctx: {},
+    followup(message: unknown) {
+      events.push({ type: 'turn/start' })
+      idle = Promise.resolve(listener?.()?.(
+        { agent: agent as unknown as Agent },
+        () => Promise.resolve({ kind: 'enter', messages: [message as { id?: string }] }),
+      )).then((decision) => {
+        if (decision?.kind !== 'enter' || decision.messages?.length !== 0) {
+          throw new Error('blank-session pre-step was not consumed')
+        }
+        events.push({ type: 'turn/end' })
+      })
+    },
+    whenIdle: () => idle,
+  }
+  return agent as unknown as Agent
+}
+
+const existingAgent = agentWithHistory()
+const invocation = (rawInput = '', agent: Agent = existingAgent) => ({
   commandId: 'command-1',
   agent,
   rawInput,
@@ -121,6 +161,7 @@ describe('DSH command integration', () => {
     const result = await command?.handler(invocation())
     expect(result?.kind).toBe('success')
     expect(result?.text).toContain('Final answer')
+    expect(test.renamed).toEqual([])
     expect(test.childRequests).toHaveLength(4)
     expect(test.childRequests.every(request => request.toolFilter?.allow?.join(',') === 'web_search,web_fetch')).toBe(true)
     expect(test.childRequests.map(request => request.agentOptions)).toEqual([
@@ -153,5 +194,16 @@ describe('DSH command integration', () => {
       kind: 'error',
       text: 'Council 失败：subagent provider "spawn" is not registered',
     })
+  })
+
+  it('retains a command started on a blank session without making another model call', async () => {
+    const test = harness()
+    const blankAgent = agentWithHistory(true, test.preStep)
+    const result = await test.command()?.handler(invocation('', blankAgent))
+    expect(result).toMatchObject({ kind: 'success' })
+    expect(test.renamed).toEqual(['Council'])
+    expect(blankAgent.session.snapshotEvents().some(event => event.type === 'turn/start')).toBe(true)
+    expect(blankAgent.session.snapshotEvents().some(event => event.type === 'step/start')).toBe(false)
+    expect(test.childRequests).toHaveLength(4)
   })
 })
