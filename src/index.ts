@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -6,6 +7,8 @@ import { createUserMessage, type ContentBlock } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-session-projection'
 import type {} from '@deepseek-ai/dsh-session-title'
 import type {} from '@deepseek-ai/dsh-settings'
+import type {} from '@deepseek-ai/dsh-system-prompt'
+import type {} from '@deepseek-ai/dsh-tools'
 import type { SubagentResult, SubagentRun } from '@deepseek-ai/dsh-subagent'
 import type { AskUserQuestionItem } from '@deepseek-ai/dsh-user-questions'
 import { abortable, withDeadline } from './async.js'
@@ -32,6 +35,7 @@ export const inject = [
   'sessionTitle',
   'settings',
   'subagents',
+  'tools',
 ]
 
 export interface Config extends CouncilConfig {}
@@ -50,6 +54,12 @@ const WEB_TOOLS = ['web_search', 'web_fetch'] as const
 interface BlankRetention {
   readonly messageId: string
   consumed: boolean
+}
+
+interface ChildStart {
+  readonly parent: Agent
+  readonly request: ChildRequest
+  readonly copy: CouncilCopy
 }
 
 /** Read the same blank-session projection that drives DSH's session list. */
@@ -174,7 +184,7 @@ async function settleRun(run: SubagentRun, signal: AbortSignal): Promise<ChildOu
   }
 }
 
-function runtimeFor(ctx: Context, parent: Agent, config: Config, copy: CouncilCopy): CouncilRuntime {
+function runtimeFor(ctx: Context, parent: Agent, config: Config, copy: CouncilCopy, childStarts: AsyncLocalStorage<ChildStart>): CouncilRuntime {
   return {
     discover: signal => discover(ctx, signal, config.childTimeoutMs, copy),
     async ask(questions, signal) {
@@ -187,7 +197,7 @@ function runtimeFor(ctx: Context, parent: Agent, config: Config, copy: CouncilCo
     },
     async runChild(request: ChildRequest) {
       request.signal.throwIfAborted()
-      const run = await ctx.subagents.start(config.subagentProvider, {
+      const run = await childStarts.run({ parent, request, copy }, () => ctx.subagents.start(config.subagentProvider, {
         label: request.label,
         prompt: [{ type: 'text', text: request.prompt }],
         parent,
@@ -200,7 +210,7 @@ function runtimeFor(ctx: Context, parent: Agent, config: Config, copy: CouncilCo
         persona: request.persona,
         toolFilter: { allow: WEB_TOOLS },
         ...(request.outputSchema === undefined ? {} : { outputSchema: request.outputSchema }),
-      })
+      }))
       return settleRun(run, request.signal)
     },
     random: Math.random,
@@ -214,6 +224,7 @@ async function executeCouncil(
   lifecycleSignal: AbortSignal,
   blankRetentions: Map<string, BlankRetention>,
   copy: CouncilCopy,
+  childStarts: AsyncLocalStorage<ChildStart>,
 ): Promise<CommandResult> {
   if (invocation.rawInput.trim() !== '') return { kind: 'error', text: copy.usage }
   const signal = AbortSignal.any([invocation.signal, lifecycleSignal])
@@ -226,13 +237,15 @@ async function executeCouncil(
     if (provider === undefined) {
       throw new Error(copy.providerMissing(config.subagentProvider))
     }
-    if (!provider.capabilities.toolFilter
+    if (provider.inheritsParentContext
+      || !provider.capabilities.agentOptions
+      || !provider.capabilities.toolFilter
       || !provider.capabilities.persona
       || !provider.capabilities.outputSchema) {
       throw new Error(copy.providerCapabilities(config.subagentProvider))
     }
     const council = await runCouncil(
-      runtimeFor(ctx, invocation.agent, config, copy),
+      runtimeFor(ctx, invocation.agent, config, copy, childStarts),
       config,
       signal,
       copy,
@@ -281,17 +294,40 @@ export function apply(ctx: Context, config: Config): void {
   const activeOperations = new Set<Promise<CommandResult>>()
   const blankRetentions = new Map<string, BlankRetention>()
   const lifecycle = new AbortController()
+  const childStarts = new AsyncLocalStorage<ChildStart>()
+  // DSH's restriction preserves child-local registrations (including its
+  // delegation tool). Install a final guard before the child receives its prompt.
+  ctx.on('agent/created', ({ agent }) => {
+    const start = childStarts.getStore()
+    if (start === undefined || agent.session.header.parentSession !== start.parent.id) return
+    const allowed = new Set<string>(WEB_TOOLS)
+    if (start.request.outputSchema !== undefined) allowed.add('structured_output')
+    agent.ctx.tools.presentAs('native')
+    agent.ctx.tools.guard(execution => allowed.has(execution.name) ? undefined : start.copy.toolDenied)
+    agent.ctx.on('system-prompt/assemble', async (_assembly, _context, next) => {
+      const assembly = await next()
+      return { ...assembly, tools: assembly.tools.filter(tool => allowed.has(tool.name)) }
+    }, { prepend: true })
+  }, { global: true })
   // A root listener is required: preset-scoped listeners added after Agent
   // creation do not join the already-mounted pre-step chain.
-  ctx.on('agent/pre-step', async ({ agent }, next) => {
-    const decision = await next()
+  ctx.on('agent/pre-step', async ({ agent, messages }, next) => {
     const retention = blankRetentions.get(String(agent.id))
-    if (retention === undefined || decision.kind === 'reject') return decision
+    if (retention === undefined) return next()
+    // A marker-only turn must not acquire synthetic prompt/skill messages:
+    // those would turn session retention into an unintended model request.
+    if (messages.length === 1 && String(messages[0]?.id) === retention.messageId) {
+      retention.consumed = true
+      blankRetentions.delete(String(agent.id))
+      return { kind: 'enter', messages: [] }
+    }
+    const decision = await next()
+    if (decision.kind === 'reject') return decision
     if (!decision.messages.some(message => String(message.id) === retention.messageId)) return decision
     retention.consumed = true
     blankRetentions.delete(String(agent.id))
     return { ...decision, messages: decision.messages.filter(message => String(message.id) !== retention.messageId) }
-  }, { global: true })
+  }, { global: true, prepend: true })
   const handler = (invocation: CommandInvocation): Promise<CommandResult> => {
     const copy = copyForSettings(ctx.settings.get('locale'))
     const agentId = String(invocation.agent.id)
@@ -299,7 +335,7 @@ export function apply(ctx: Context, config: Config): void {
       return Promise.resolve({ kind: 'error', text: copy.alreadyRunning })
     }
     activeAgents.add(agentId)
-    const operation = executeCouncil(ctx, config, invocation, lifecycle.signal, blankRetentions, copy)
+    const operation = executeCouncil(ctx, config, invocation, lifecycle.signal, blankRetentions, copy, childStarts)
     activeOperations.add(operation)
     const retire = (): void => {
       activeAgents.delete(agentId)

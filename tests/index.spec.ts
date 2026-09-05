@@ -45,7 +45,7 @@ const arbiter = {
 }
 
 type PreStepListener = (
-  payload: { agent: Agent },
+  payload: { agent: Agent; messages: Array<{ id?: string }> },
   next: () => Promise<{ kind: 'enter'; messages: Array<{ id?: string }> }>,
 ) => Promise<{ kind: string; messages?: Array<{ id?: string }> }>
 type SettingsListener = (namespace: string) => void
@@ -56,8 +56,8 @@ type TestAgent = Agent & {
 
 function harness(
   ask = async () => pickerAnswers,
-  provider: { capabilities: { outputSchema: boolean; depthLimit: boolean; toolFilter: boolean; persona: boolean } } | null = {
-    capabilities: { outputSchema: true, depthLimit: true, toolFilter: true, persona: true },
+  provider: { capabilities: { agentOptions: boolean; outputSchema: boolean; depthLimit: boolean; toolFilter: boolean; persona: boolean } } | null = {
+    capabilities: { agentOptions: true, outputSchema: true, depthLimit: true, toolFilter: true, persona: true },
   },
   initialLocale: 'en' | 'zh' = 'en',
   configuration = config,
@@ -65,6 +65,9 @@ function harness(
   let command: CommandDefinition | undefined
   let preStep: PreStepListener | undefined
   let settingsUpdated: SettingsListener | undefined
+  let agentCreated: ((payload: { agent: Agent }) => void) | undefined
+  const guards: Array<(execution: { name: string }) => string | undefined> = []
+  const assemblies: Array<(assembly: unknown, context: unknown, next: () => Promise<{ tools: Array<{ name: string }> }>) => Promise<{ tools: Array<{ name: string }> }>> = []
   let locale = initialLocale
   const childRequests: SubagentStartRequest[] = []
   const disposed: string[] = []
@@ -110,6 +113,18 @@ function harness(
             }
           : properties?.answerMarkdown === undefined ? undefined : arbiter
         const id = `child-${childRequests.length}`
+        const child = {
+          id,
+          session: { header: { parentSession: request.parent.id } },
+          ctx: {
+            tools: {
+              presentAs(mode: string) { expect(mode).toBe('native') },
+              guard(callback: typeof guards[number]) { guards.push(callback) },
+            },
+            on(_event: string, listener: typeof assemblies[number]) { assemblies.push(listener) },
+          },
+        } as unknown as Agent
+        agentCreated?.({ agent: child })
         return {
           id: id as SubagentRun['id'],
           localAgent: undefined,
@@ -122,7 +137,8 @@ function harness(
         }
       },
     },
-    on(event: string, listener: PreStepListener | SettingsListener) {
+    on(event: string, listener: PreStepListener | SettingsListener | typeof agentCreated) {
+      if (event === 'agent/created') agentCreated = listener as typeof agentCreated
       if (event === 'agent/pre-step') preStep = listener as PreStepListener
       if (event === 'settings/updated') settingsUpdated = listener as SettingsListener
       return () => {
@@ -144,6 +160,8 @@ function harness(
     async dispose() { await Promise.all(cleanups.reverse().map(cleanup => cleanup())) },
     command: () => command,
     childRequests,
+    guards,
+    assemblies,
     disposed,
     renamed,
     preStep: () => preStep,
@@ -166,7 +184,7 @@ function agentWithHistory(blank = false, listener?: () => PreStepListener | unde
       events.push({ type: 'turn/start' })
       agent.session.blank = false
       idle = Promise.resolve(listener?.()?.(
-        { agent: agent as unknown as Agent },
+        { agent: agent as unknown as Agent, messages: [message as { id?: string }] },
         () => Promise.resolve({ kind: 'enter', messages: [message as { id?: string }] }),
       )).then((decision) => {
         if (decision?.kind !== 'enter' || decision.messages?.length !== 0) {
@@ -225,6 +243,24 @@ describe('DSH command integration', () => {
     await expect(first).resolves.toMatchObject({ kind: 'success' })
   })
 
+  it('blocks child-local tools and removes them from prompt assembly', async () => {
+    const test = harness()
+    await test.command()!.handler(invocation())
+    expect(test.guards).toHaveLength(4)
+    for (const guard of test.guards) {
+      expect(guard({ name: 'subagent' })).toContain('Council participants')
+      expect(guard({ name: 'shell' })).toContain('Council participants')
+      expect(guard({ name: 'web_search' })).toBeUndefined()
+    }
+    expect(test.guards[0]!({ name: 'structured_output' })).toBeDefined()
+    expect(test.guards[2]!({ name: 'structured_output' })).toBeUndefined()
+    const assembly = { tools: [{ name: 'web_search' }, { name: 'subagent' }, { name: 'structured_output' }] }
+    expect(await test.assemblies[0]!(assembly, {}, async () => assembly)).toEqual({ tools: [{ name: 'web_search' }] })
+    expect(await test.assemblies[2]!(assembly, {}, async () => assembly)).toEqual({ tools: [
+      { name: 'web_search' }, { name: 'structured_output' },
+    ] })
+  })
+
   it('registers during boot and reports a missing runtime provider only when invoked', async () => {
     const test = harness(async () => pickerAnswers, null)
     await expect(test.command()?.handler(invocation())).resolves.toEqual({
@@ -272,7 +308,7 @@ describe('DSH command integration', () => {
     const userMessage = { id: 'ordinary-message' }
     const mixedAgent = agentWithHistory(true, () => async (payload, next) => {
       const decision = await next()
-      const result = await test.preStep()?.(payload, async () => ({
+      const result = await test.preStep()?.({ ...payload, messages: [...payload.messages, userMessage] }, async () => ({
         ...decision, messages: [...decision.messages, userMessage],
       }))
       expect(result?.messages).toEqual([userMessage])
@@ -290,6 +326,15 @@ describe('DSH command integration', () => {
     expect(await test.command()?.handler(invocation('', blankAgent))).toMatchObject({ kind: 'success' })
     expect(test.renamed).toEqual([])
     expect(blankAgent.recordedEvents).toEqual([])
+  })
+
+  it('does not let prompt injectors turn marker-only retention into a model completion', async () => {
+    const test = harness()
+    const injectPrompt = vi.fn(async () => ({ kind: 'enter' as const, messages: [{ id: 'injected-context' }] }))
+    const blankAgent = agentWithHistory(true, () => async (payload) => test.preStep()!(payload, injectPrompt))
+    expect(await test.command()!.handler(invocation('', blankAgent))).toMatchObject({ kind: 'success' })
+    expect(injectPrompt).not.toHaveBeenCalled()
+    expect(test.childRequests).toHaveLength(4)
   })
 
   it('keeps the final answer when retaining the session fails', async () => {

@@ -18,6 +18,7 @@ export interface CouncilCopy {
   readonly runTimedOut: string
   readonly emptyAnswer: string
   readonly invalidSelection: string
+  readonly toolDenied: string
   readonly noModels: string
   readonly noAnswers: string
   readonly noReviews: string
@@ -93,6 +94,7 @@ const en: CouncilCopy = {
   runTimedOut: 'The Council execution deadline was reached.',
   emptyAnswer: 'The answerer returned an empty answer.',
   invalidSelection: 'The selection contains duplicate or unknown question identifiers.',
+  toolDenied: 'Council participants may only use Web tools and their structured-output submission.',
   noModels: 'Fewer than two models are currently available.',
   noAnswers: 'No answerer returned a successful non-empty answer.',
   noReviews: 'No reviewer returned a valid review.',
@@ -142,7 +144,7 @@ const en: CouncilCopy = {
   duplicateModel: role => `${role} cannot contain duplicate models.`,
   unavailableCatalogs: providers => `These provider catalogs could not be read and are unavailable for selection: ${providers.join(', ')}`,
   providerMissing: provider => `subagent provider "${provider}" is not registered`,
-  providerCapabilities: provider => `subagent provider "${provider}" lacks required capabilities`,
+  providerCapabilities: provider => `subagent provider "${provider}" must use fresh context and support model selection, personas, tool filtering, and structured output`,
   childStopped: reason => `child stopped with ${reason}`,
   failed: reason => `Council failed: ${reason}`,
   averageRank: (value, votes) => `average rank ${value.toFixed(2)}, ${votes} vote${votes === 1 ? '' : 's'}`,
@@ -189,6 +191,7 @@ const zh: CouncilCopy = {
   runTimedOut: '议会运行已达到整体时间上限。',
   emptyAnswer: '回答人返回了空白答案。',
   invalidSelection: '选择结果包含重复或未知的问题标识。',
+  toolDenied: '议会参与者只能使用 Web 工具及其结构化结果提交工具。',
   noModels: '当前可用模型不足两个。',
   noAnswers: '没有回答人成功返回非空答案。',
   noReviews: '没有评审人成功返回有效评审。',
@@ -238,7 +241,7 @@ const zh: CouncilCopy = {
   duplicateModel: role => `${role}不能包含重复模型。`,
   unavailableCatalogs: providers => `以下 provider 目录读取失败，未列入选择：${providers.join('、')}`,
   providerMissing: provider => `子代理 provider“${provider}”尚未注册`,
-  providerCapabilities: provider => `子代理 provider“${provider}”缺少所需能力`,
+  providerCapabilities: provider => `子代理 provider“${provider}”必须使用全新上下文，并支持模型选择、persona、工具过滤和结构化输出`,
   childStopped: reason => `子代理以 ${{
     completed: '已完成',
     aborted: '已中止',
