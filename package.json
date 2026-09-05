@@ -2,6 +2,13 @@
   "name": "dsh-council",
   "version": "0.1.0",
   "description": "Multi-model council deliberation for DeepSeek Harness",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "llm-council",
+    "multi-agent",
+    "deliberation"
+  ],
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -17,13 +24,20 @@
     "lib/",
     "cordis.patch.yml",
     "README.md",
-    "README.zh.md"
+    "README.zh.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "docs/"
   ],
   "scripts": {
     "build": "tsdown",
     "prepare": "pnpm --ignore-workspace run build",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm typecheck && pnpm test && pnpm docs:check && pnpm build",
+    "docs:check": "node scripts/check-docs.mjs",
+    "test:host": "pnpm build && node scripts/test-host.mjs"
   },
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
@@ -36,6 +50,11 @@
   },
   "dependencies": {
     "@deepseek-ai/schemastery": "3.18.2"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.2",
+    "@deepseek-ai/dsh-llm": ">=0.1.2-rc.1",
+    "@deepseek-ai/dsh-tools": ">=0.1.2-rc.1"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.2",
@@ -56,6 +75,7 @@
     "@deepseek-ai/dsh-user-approval": "0.1.2-rc.1",
     "@deepseek-ai/dsh-user-questions": "0.1.2-rc.1",
     "@types/node": "^22.20.0",
+    "@vitest/coverage-v8": "4.1.11",
     "tsdown": "^0.22.2",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"

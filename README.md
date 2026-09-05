@@ -1,56 +1,135 @@
-# dsh-council
+<div align="center">
 
-[English](README.md) | [中文](README.zh.md)
+<p><strong>English</strong> · <a href="README.zh.md">简体中文</a></p>
+<h1>DSH Council</h1>
+<p><strong>Independent answers. Anonymous reviews. One reasoned decision.</strong></p>
+<p>Multi-model deliberation inside <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a>.</p>
 
-`dsh-council` is a DeepSeek Harness bundle that runs an anonymous, multi-model deliberation from the existing chat composer.
+<p>
+<img src="https://img.shields.io/badge/DSH-plugin-6D5DFB?style=flat-square" alt="DSH plugin">
+<img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript">
+<img src="https://img.shields.io/badge/Node.js-22.19%2B%20%7C%2024%2B-339933?style=flat-square" alt="Node.js 22.19+ or 24+">
+<img src="https://img.shields.io/badge/languages-English%20%2F%20中文-222222?style=flat-square" alt="English and Chinese">
+</p>
 
-Type `/council` to select answerers, reviewers, a final arbiter, and the question. Every invocation reads the live DSH provider/model directory instead of keeping a separate model configuration.
+<p><a href="#quick-start">Quick start</a> · <a href="#the-deliberation">How it works</a> · <a href="#configuration">Configuration</a> · <a href="#development">Development</a></p>
 
-## How it works
+<!-- DEMO VIDEO: replace this image with a GitHub-uploaded video URL. Keep this section near the top. -->
+<img src="docs/assets/demo-placeholder.svg" width="900" alt="Demo video placeholder: answer, review, decide. Video coming soon.">
+<p><sub>Demo video coming soon · This placeholder is not a playable video.</sub></p>
 
-1. Two to eight answerers receive the question independently and run in parallel.
-2. One to eight reviewers receive randomly labelled answers (`Answer A`, `Answer B`, …), compare them using Fusion-style dimensions, and return a complete anonymous ranking.
-3. One arbiter receives only the anonymous answers, anonymous reviews, and aggregate ranking, then returns the final answer and audit findings.
+</div>
 
-Each role runs as a fresh DSH `spawn` subagent. The child can use `web_search` and `web_fetch`, but cannot use shell, filesystem, delegation, or council tools. The current conversation history is not copied into the children. Raw work remains available in DSH's ordinary subagent sessions; the command result contains the final answer and a compact audit summary.
+---
 
-When `/council` starts from the provisional New Session screen, the plugin retains that Session with a model-free empty turn and names it `Council`. The command result therefore remains visible in the sidebar and survives a page refresh without an extra main-agent completion. Existing conversations keep their current title and history unchanged.
+Run `/council` in your existing DSH Web conversation. Choose who answers, who reviews, and who decides. Council collects independent responses, compares them anonymously, and returns a final synthesis with an audit you can inspect.
 
-The pipeline follows OpenRouter Fusion's parallel panel, structured comparison, and final synthesis, with Karpathy LLM Council's anonymous peer review and ranking.
+It reuses DSH's configured providers and credentials. No separate model list or OpenRouter account is required.
 
-## Languages
+<table>
+<tr>
+<td width="33%"><strong>01 · Answer</strong><br>2–8 models work independently in parallel.</td>
+<td width="33%"><strong>02 · Review</strong><br>1–8 reviewers assess and rank anonymous answers.</td>
+<td width="33%"><strong>03 · Decide</strong><br>One arbiter synthesizes evidence and resolves disagreements.</td>
+</tr>
+</table>
 
-The command follows DSH's live `locale.preference` setting. Chinese (`zh` and `zh-*`) and English are supported across command discovery, selection questions, validation and failure messages, child labels, model personas and prompts, audit output, and blank-session titles. A locale without a Council dictionary follows DSH's terminal English fallback. Changing the DSH language updates the `/council` description immediately; a run already in progress keeps the language it started with so one result never mixes locales.
+## What you get
 
-## Development
+| Capability | Behavior |
+| :--- | :--- |
+| **Live model discovery** | Every invocation reads all configured provider catalogs. |
+| **Separate roles** | Choose answerers, reviewers, and an arbiter; cross-role reuse is allowed. |
+| **Anonymous comparison** | Shuffled answer labels; no routing metadata in review or arbitration inputs. |
+| **Structured reviews** | Strengths, weaknesses, consensus, contradictions, coverage gaps, unique insights, blind spots, and complete rankings. |
+| **Web evidence** | Children can use DSH's `web_search` and `web_fetch` when available. |
+| **Inspectable output** | Final answer, identity mapping, average ranks, confidence notes, and failures. |
+| **Bilingual interaction** | English and Simplified Chinese follow DSH's language setting. |
 
-Requirements: Node.js `^22.19.0 || >=24.0.0` and pnpm `11.7.0`.
+Useful for competing explanations, substantial evidence, and design trade-offs. Agreement among models is not independent verification and does not guarantee correctness.
+
+## Quick start
+
+### 1. Prepare the checkout
+
+Clone or download this repository, then run:
 
 ```sh
-pnpm install
-pnpm test
-pnpm typecheck
-pnpm build
+cd dsh-council
+pnpm install --frozen-lockfile
+pnpm check
 ```
 
-## Install into DSH
+Requirements: **Node.js `^22.19.0 || >=24.0.0`**, **pnpm 11.7.0**, and DSH. The latest host verified for this release is **DSH `0.1.2-rc.1`**. DSH is a developer preview with evolving APIs; the host test resolves npm `latest` on each run.
 
-Build the checkout, add it to the Web profile, then restart the running Web process:
+### 2. Install into DSH
+
+From the built checkout:
 
 ```sh
-pnpm build
-dsh plugin --profile web add .
-dsh --profile web --dump-config
-dsh web
+npx --yes @deepseek-ai/dsh@latest plugin --profile web add .
+npx --yes @deepseek-ai/dsh@latest --profile web --dump-config
+npx --yes @deepseek-ai/dsh@latest web
 ```
 
-When `dsh` is being run through npm rather than a global executable, use `npm exec @deepseek-ai/dsh --` in place of `dsh`.
+Restart an already-running Web process after installation or rebuilding. The configuration dump should contain a `dsh-council` entry.
 
-The config dump must contain the `dsh-council` bundle layer and plugin row. Installation changes the selected DSH profile; development tests do not modify it.
+Configure and authenticate at least two model routes in DSH. Catalog discovery reads advertised routes; it does **not** make paid test completions or guarantee every listed model is callable.
+
+### 3. Deliberate
+
+Enter the command with no arguments:
+
+```text
+/council
+```
+
+1. **Answerers:** select 2–8 models.
+2. **Reviewers:** select 1–8 models.
+3. **Arbiter:** select exactly one model.
+4. **Topic:** type the question.
+
+Example:
+
+> Design a crash-safe job queue for three workers. Specify delivery guarantees, lease expiry, idempotency, and recovery after a crash between committing an external side effect and acknowledging a job. Compare two designs and identify their assumptions.
+
+Selections apply to one run. Invoke `/council` again to refresh catalogs and select a new panel.
+
+## The deliberation
+
+**Answer → review → arbitration.** Each stage waits for the previous stage. Every participant is a fresh DSH `spawn` child; parent conversation history is not copied. Include necessary context in the topic.
+
+Surviving answers are shuffled and labelled `Answer A`, `Answer B`, and so on. Reviewers receive the question and those answers. The arbiter receives anonymous answers, structured reviews, and average ranking positions. Lower average rank is better; ties are displayed in label order. The arbiter decides from the evidence rather than mechanically selecting the highest-ranked answer.
+
+<details>
+<summary><strong>What is included in the result?</strong></summary>
+
+- The final answer and confidence notes.
+- Answerer, reviewer, and arbiter identity mappings.
+- Average ranks and vote counts.
+- Consensus, disagreements, and blind spots.
+- Failed provider catalogs and participants.
+
+Raw answers and reviews remain in DSH's child-session records. From a blank New Session, Council retains its result using an empty, model-free turn and a localized title. If you start a normal conversation while Council runs, that session keeps its existing state.
+
+</details>
+
+<details>
+<summary><strong>How does this relate to Fusion and LLM Council?</strong></summary>
+
+Comparison dimensions draw on [OpenRouter Fusion](https://openrouter.ai/docs/guides/features/plugins/fusion); anonymous review and ranking draw on [Karpathy's LLM Council](https://github.com/karpathy/llm-council). Council implements its own DSH orchestration and calls your configured model routes. It does not call the Fusion endpoint.
+
+</details>
+
+## Language
+
+Council follows DSH's live `locale.preference`: `zh` and `zh-*` select Simplified Chinese; other settings use English. This covers command discovery, questions, validation, labels, personas, prompts, audits, and new-session titles.
+
+Switching language immediately updates command discovery; an in-progress council keeps its starting language. Provider names and upstream diagnostics are preserved. Model output language is requested through prompts, not enforced by a translation engine.
 
 ## Configuration
 
-Defaults use the deep budget selected for V1:
+Set the `config` of the `dsh-council` entry in your DSH profile. A DSH patch file looks like:
 
 ```yaml
 - id: dsh-council
@@ -63,18 +142,62 @@ Defaults use the deep budget selected for V1:
     subagentProvider: spawn
 ```
 
-`runTimeoutMs` must be greater than or equal to `childTimeoutMs`. The configured subagent provider must support personas, tool filtering, and structured output.
+| Setting | Default | Meaning |
+| :--- | ---: | :--- |
+| `answerMaxTokens` | `16384` | Per-request output token cap for answerers. |
+| `reviewMaxTokens` | `16384` | Per-request output token cap for reviewers. |
+| `arbiterMaxTokens` | `16384` | Per-request output token cap for the arbiter. |
+| `childTimeoutMs` | `300000` | Deadline for each child and each provider catalog read. |
+| `runTimeoutMs` | `900000` | Deliberation deadline, starting after selection. |
+| `subagentProvider` | `spawn` | DSH child execution provider. |
 
-## Failure behavior
+Numbers must be positive integers. Timeouts cannot exceed `2147483647` ms; `runTimeoutMs` must be at least `childTimeoutMs`. The subagent provider must use fresh context and support model selection, personas, tool filtering, and structured output. Human selection time is outside the execution budget.
 
-- Provider catalog failures are shown in the audit while models from successful catalogs remain selectable.
-- The pipeline continues when at least one answer and one valid review survive.
-- A failed or invalid arbiter result fails the command.
-- Cancelling the command, reaching the overall deadline, or unloading the plugin aborts and disposes active children.
-- A second `/council` in the same session is rejected while the first is active; other sessions remain independent.
+## Reliability and boundaries
 
-The role prompts ask each child to use at most four Web calls, matching the Fusion default. DSH does not currently expose an enforceable per-child tool-call count through its public subagent API, so the child and overall timeouts are the hard execution bounds.
+| Situation | Behavior |
+| :--- | :--- |
+| A catalog fails or times out | Healthy catalogs remain selectable; failures appear in the audit. |
+| Some participants fail | Continue with at least one non-empty answer and one valid review. |
+| All answerers or all reviewers fail | Stop before the next stage and report the failure audit. |
+| Invalid or failed arbiter | Fail the run without inventing a final answer. |
+| Cancellation, deadline, or unload | Abort active work and dispose published child handles. |
+| Another run in the same session | Reject it until the active operation finishes. Separate sessions remain independent. |
 
-## Cost
+**Cost.** A panel creates `answerers + reviewers + 1` children: 4–17 per run. Web tools and structured-output retries can require multiple model requests per child. Token limits are per request, not a spending cap.
 
-A run performs one call per selected answerer, one per selected reviewer, and one arbiter call, plus any Web-backed follow-up steps. With the maximum roster this is seventeen child agents, so review the selected models before submitting the picker.
+**Tools.** The allowlist contains `web_search` and `web_fetch`; DSH also supplies `structured_output` to reviewers and the arbiter. Local children use native tool presentation and an execution guard that also blocks child-local delegation tools. The request for at most four Web calls per child is advisory. Catalog reads have no DSH cancellation parameter: Council stops waiting on timeout, but the adapter's underlying read may finish later.
+
+**Data.** The question and intermediate evidence go to selected providers and normal DSH session storage. Routing metadata is removed from deliberation inputs, but models can self-identify in response text. Anonymity reduces identity bias; it is not a privacy guarantee. See [SECURITY.md](SECURITY.md).
+
+## Development
+
+```sh
+pnpm check           # Types, deterministic tests, production build
+pnpm test:coverage   # Coverage report and enforced thresholds
+pnpm test:host       # Pack → install latest DSH → full EN/ZH host runs
+pnpm pack            # Build a distributable tarball
+```
+
+The host test uses a temporary DSH home, a fresh npm installation, real command registration and spawn children, and deterministic model responses. Network access is needed to install packages; no provider credentials or paid completions are used. It validates integration, not real model quality.
+
+```text
+src/
+├── index.ts       DSH integration, discovery, lifecycle, session retention
+├── council.ts     Selection and three-stage orchestration
+├── protocol.ts    Validation, anonymous payloads, rankings, rendering
+├── locales.ts     English / Simplified Chinese copy and prompts
+├── async.ts       Cancellation and disposable deadlines
+└── types.ts       Shared data contracts
+```
+
+Contributions: [CONTRIBUTING.md](CONTRIBUTING.md). Audit and release checks: [release readiness](docs/release-readiness.md).
+
+## Project status
+
+Version `0.1.0`, preparing for its first public release. Installation is from source; a published npm package or hosted demo is not assumed. The open-source license and final GitHub URL must be selected before publication.
+
+<div align="center">
+<sub>Built for DeepSeek Harness · Inspired by multi-model deliberation</sub><br>
+<a href="#dsh-council">Back to top ↑</a>
+</div>

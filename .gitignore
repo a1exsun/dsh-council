@@ -3,3 +3,9 @@ lib/
 coverage/
 *.tgz
 .DS_Store
+.env
+.env.*
+!.env.example
+.dsh/
+.dsh-test/
+*.log

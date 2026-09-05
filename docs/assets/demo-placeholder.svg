@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="470" viewBox="0 0 1200 470" role="img" aria-labelledby="title desc">
+  <title id="title">DSH Council demo video placeholder</title>
+  <desc id="desc">Answer, review, decide. Demo video coming soon.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1"><stop stop-color="#121528"/><stop offset="1" stop-color="#292445"/></linearGradient>
+    <linearGradient id="accent"><stop stop-color="#ac9bff"/><stop offset="1" stop-color="#86ded2"/></linearGradient>
+  </defs>
+  <rect width="1200" height="470" rx="24" fill="url(#background)"/>
+  <rect x="1" y="1" width="1198" height="468" rx="24" fill="none" stroke="#504967"/>
+  <circle cx="1020" cy="50" r="210" fill="#8470da" opacity=".06"/>
+  <circle cx="100" cy="430" r="190" fill="#86ded2" opacity=".04"/>
+  <g font-family="system-ui,-apple-system,Segoe UI,sans-serif" text-anchor="middle">
+    <text x="600" y="65" fill="#ac9bff" font-size="14" letter-spacing="4">DEEPSEEK HARNESS PLUGIN</text>
+    <text x="600" y="125" fill="#f7f6ff" font-size="48" font-weight="700">A council inside your conversation.</text>
+    <text x="600" y="166" fill="#b8b5cb" font-size="20">Independent perspectives. One considered answer.</text>
+    <rect x="268" y="204" width="184" height="46" rx="23" fill="#302b4c" stroke="#685991"/>
+    <rect x="508" y="204" width="184" height="46" rx="23" fill="#302b4c" stroke="#685991"/>
+    <rect x="748" y="204" width="184" height="46" rx="23" fill="#263a43" stroke="#47746f"/>
+    <text x="360" y="233" fill="#dfd6ff" font-size="17">01  ANSWER</text>
+    <text x="600" y="233" fill="#dfd6ff" font-size="17">02  REVIEW</text>
+    <text x="840" y="233" fill="#b8f0e6" font-size="17">03  DECIDE</text>
+    <path d="M466 227h28m-7-6 7 6-7 6M706 227h28m-7-6 7 6-7 6" stroke="#a09ab8" fill="none" stroke-width="2"/>
+    <circle cx="600" cy="326" r="39" fill="url(#accent)"/>
+    <path d="m591 310 25 16-25 16z" fill="#24223d"/>
+    <text x="600" y="402" fill="#e0dcef" font-size="16" letter-spacing="3">DEMO VIDEO · COMING SOON</text>
+    <text x="600" y="432" fill="#9d98b4" font-size="13">Video placeholder / 演示视频占位</text>
+  </g>
+</svg>
