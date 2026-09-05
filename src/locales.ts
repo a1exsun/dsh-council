@@ -11,6 +11,13 @@ export interface CouncilCopy {
   readonly alreadyRunning: string
   readonly canceled: string
   readonly unknownFailure: string
+  readonly projectionMissing: string
+  readonly retentionFailed: string
+  readonly catalogTimedOut: string
+  readonly childTimedOut: string
+  readonly runTimedOut: string
+  readonly emptyAnswer: string
+  readonly invalidSelection: string
   readonly noModels: string
   readonly noAnswers: string
   readonly noReviews: string
@@ -79,6 +86,13 @@ const en: CouncilCopy = {
   alreadyRunning: 'A Council run is already active in this session.',
   canceled: 'Council was canceled.',
   unknownFailure: 'unknown failure',
+  projectionMissing: 'DSH session metadata is unavailable.',
+  retentionFailed: 'The result could not be retained in the new session.',
+  catalogTimedOut: 'Provider model discovery timed out.',
+  childTimedOut: 'The model call timed out.',
+  runTimedOut: 'The Council execution deadline was reached.',
+  emptyAnswer: 'The answerer returned an empty answer.',
+  invalidSelection: 'The selection contains duplicate or unknown question identifiers.',
   noModels: 'Fewer than two models are currently available.',
   noAnswers: 'No answerer returned a successful non-empty answer.',
   noReviews: 'No reviewer returned a valid review.',
@@ -168,6 +182,13 @@ const zh: CouncilCopy = {
   alreadyRunning: '当前会话已有议会正在运行。',
   canceled: '议会已取消。',
   unknownFailure: '未知故障',
+  projectionMissing: 'DSH 会话元数据不可用。',
+  retentionFailed: '无法在新会话中保留此次结果。',
+  catalogTimedOut: '读取 provider 模型目录超时。',
+  childTimedOut: '模型调用超时。',
+  runTimedOut: '议会运行已达到整体时间上限。',
+  emptyAnswer: '回答人返回了空白答案。',
+  invalidSelection: '选择结果包含重复或未知的问题标识。',
   noModels: '当前可用模型不足两个。',
   noAnswers: '没有回答人成功返回非空答案。',
   noReviews: '没有评审人成功返回有效评审。',
@@ -257,7 +278,7 @@ const zh: CouncilCopy = {
 export function localeFromSettings(value: unknown): CouncilLocale {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return 'en'
   const preference = (value as Record<string, unknown>).preference
-  return typeof preference === 'string' && preference.toLowerCase().startsWith('zh') ? 'zh' : 'en'
+  return typeof preference === 'string' && /^zh(?:-|$)/i.test(preference) ? 'zh' : 'en'
 }
 
 export function copyForSettings(value: unknown): CouncilCopy {

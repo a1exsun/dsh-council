@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   parseSelection,
   runCouncil,
@@ -109,9 +109,23 @@ describe('selection', () => {
       ? { ...answer, custom: 'p/unknown' }
       : answer), copy)).toThrow(/custom routes/)
   })
+
+  it.each([
+    pickerAnswers.filter(answer => answer.id !== 'question'),
+    [...pickerAnswers, pickerAnswers[0]!],
+    [...pickerAnswers, { id: 'unknown', selected: [] }],
+    pickerAnswers.map(answer => answer.id === 'answerers' ? { ...answer, selected: ['p/a', 'p/a'] } : answer),
+    pickerAnswers.map(answer => answer.id === 'answerers' ? { ...answer, selected: ['p/a', 'p/missing'] } : answer),
+    pickerAnswers.map(answer => answer.id === 'arbiter' ? { ...answer, selected: ['p/a', 'p/b'] } : answer),
+    pickerAnswers.map(answer => answer.id === 'question' ? { ...answer, custom: '   ' } : answer),
+    pickerAnswers.map(answer => answer.id === 'question' ? { ...answer, selected: ['unexpected'] } : answer),
+  ])('rejects malformed or incomplete selections: %o', (...answers) => {
+    expect(() => parseSelection(directory, answers as CouncilAnswer[], copy)).toThrow()
+  })
 })
 
 describe('council orchestration', () => {
+  afterEach(() => vi.useRealTimers())
   it('runs each stage in parallel, enforces stage barriers, and keeps final inputs anonymous', async () => {
     const { runtime, calls } = successfulRuntime()
     const result = await runCouncil(runtime, config, new AbortController().signal, copy)
@@ -169,5 +183,72 @@ describe('council orchestration', () => {
       : original(request)
     await expect(runCouncil(base.runtime, config, new AbortController().signal, copy))
       .rejects.toMatchObject({ name: 'CouncilRunError', message: 'The arbiter did not return a valid decision.' })
+  })
+
+  it('honors cancellation even if the arbiter returns a valid result at the same time', async () => {
+    const controller = new AbortController()
+    const { runtime } = successfulRuntime()
+    const run = runtime.runChild
+    runtime.runChild = async request => {
+      const result = await run(request)
+      if (request.stage === 'arbiter') controller.abort(new Error('cancelled at final boundary'))
+      return result
+    }
+    await expect(runCouncil(runtime, config, controller.signal, copy)).rejects.toThrow('cancelled at final boundary')
+  })
+
+  it('bounds unresponsive children and reports meaningful empty-answer failures', async () => {
+    vi.useFakeTimers()
+    const { runtime } = successfulRuntime({
+      runChild: request => request.model.model === 'a'
+        ? new Promise(() => {})
+        : Promise.resolve({ stopReason: 'completed', text: '  ' }),
+    })
+    const pending = runCouncil(runtime, { ...config, childTimeoutMs: 10 }, new AbortController().signal, copy)
+    const assertion = expect(pending).rejects.toMatchObject({ failures: [
+      { message: copy.childTimedOut }, { message: copy.emptyAnswer },
+    ] })
+    await vi.advanceTimersByTimeAsync(11)
+    await assertion
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('reports the overall deadline and never starts a later stage after it', async () => {
+    vi.useFakeTimers()
+    const calls: ChildRequest[] = []
+    const { runtime } = successfulRuntime({ runChild: request => {
+      calls.push(request)
+      return new Promise(() => {})
+    } })
+    const pending = runCouncil(runtime, { ...config, childTimeoutMs: 100, runTimeoutMs: 20 },
+      new AbortController().signal, copy)
+    const assertion = expect(pending).rejects.toMatchObject({ name: 'CouncilRunError', message: copy.runTimedOut })
+    await vi.advanceTimersByTimeAsync(21)
+    await assertion
+    expect(calls.map(call => call.stage)).toEqual(['answer', 'answer'])
+    expect(calls.every(call => call.signal.aborted)).toBe(true)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('fails after all invalid reviews without invoking the arbiter', async () => {
+    const calls: string[] = []
+    const { runtime } = successfulRuntime({ runChild: async request => {
+      calls.push(request.stage)
+      return { stopReason: 'completed', text: 'Answer', structured: {} }
+    } })
+    await expect(runCouncil(runtime, config, new AbortController().signal, copy))
+      .rejects.toMatchObject({ message: copy.noReviews, failures: [
+        { message: copy.invalidReview }, { message: copy.invalidReview },
+      ] })
+    expect(calls).not.toContain('arbiter')
+  })
+
+  it('preserves an arbiter refusal as a stop reason instead of a schema error', async () => {
+    const { runtime } = successfulRuntime()
+    const run = runtime.runChild
+    runtime.runChild = request => request.stage === 'arbiter'
+      ? Promise.resolve({ stopReason: 'refusal', text: '' }) : run(request)
+    await expect(runCouncil(runtime, config, new AbortController().signal, copy))
+      .rejects.toMatchObject({ failures: [{ stage: 'arbiter', message: 'child stopped with refusal' }] })
   })
 })

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { copyForSettings, localeCopies, localeFromSettings } from '../src/locales.js'
 import { answerPrompt, renderCouncilResult } from '../src/protocol.js'
-import { selectionQuestions } from '../src/council.js'
+import { parseSelection, selectionQuestions } from '../src/council.js'
 import type { CouncilResult, ModelDirectory, ModelRef } from '../src/types.js'
 
 function model(key: string): ModelRef {
@@ -71,5 +71,28 @@ describe('DSH locale mapping', () => {
     }
     expect(rendered).not.toContain('Council Decision')
     expect(rendered).not.toContain('Failures and Degradation')
+  })
+
+  it.each(['en', 'zh'] as const)('localizes selection errors and child failure details in %s', (locale) => {
+    const copy = localeCopies[locale]
+    const selection = [
+      { id: 'answerers', selected: ['p/a', 'p/b'] },
+      { id: 'reviewers', selected: ['p/b'] },
+      { id: 'arbiter', selected: ['p/a'] },
+      { id: 'question', selected: [], custom: 'Topic' },
+    ]
+    for (const [selected, expected] of [
+      [[], copy.selectionCount(copy.answererRole, 2, 8)],
+      [['p/a', 'p/a'], copy.duplicateModel(copy.answererRole)],
+      [['p/a', 'invalid'], copy.unknownModel(copy.answererRole)],
+    ] as const) {
+      expect(() => parseSelection(directory, [{ id: 'answerers', selected }, ...selection.slice(1)], copy))
+        .toThrow(expected)
+    }
+    expect(() => parseSelection(directory, [{ ...selection[0]!, custom: 'typed route' }, ...selection.slice(1)], copy))
+      .toThrow(copy.customModel(copy.answererRole))
+    expect(copy.providerMissing('test')).toContain('test')
+    expect(copy.providerCapabilities('test')).toContain('test')
+    expect(copy.childStopped('refusal')).toContain(locale === 'zh' ? '拒绝任务' : 'refusal')
   })
 })

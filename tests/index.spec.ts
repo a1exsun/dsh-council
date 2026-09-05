@@ -2,7 +2,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { CommandDefinition, CommandInvocation } from '@deepseek-ai/dsh-commands'
 import type { SubagentRun, SubagentStartRequest } from '@deepseek-ai/dsh-subagent'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apply, type Config } from '../src/index.js'
 
 const config: Config = {
@@ -60,6 +60,7 @@ function harness(
     capabilities: { outputSchema: true, depthLimit: true, toolFilter: true, persona: true },
   },
   initialLocale: 'en' | 'zh' = 'en',
+  configuration = config,
 ) {
   let command: CommandDefinition | undefined
   let preStep: PreStepListener | undefined
@@ -68,6 +69,7 @@ function harness(
   const childRequests: SubagentStartRequest[] = []
   const disposed: string[] = []
   const renamed: string[] = []
+  const cleanups: Array<() => unknown> = []
   const ctx = {
     commands: {
       register(definition: CommandDefinition) {
@@ -130,12 +132,16 @@ function harness(
     },
     effect(factory: () => Generator<unknown, void, unknown>) {
       const iterator = factory()
-      for (let step = iterator.next(); !step.done; step = iterator.next()) { /* mount effects */ }
+      for (let step = iterator.next(); !step.done; step = iterator.next()) {
+        if (typeof step.value === 'function') cleanups.push(step.value as () => unknown)
+      }
       return () => {}
     },
   } as unknown as Context
-  apply(ctx, config)
+  apply(ctx, configuration)
   return {
+    ctx,
+    async dispose() { await Promise.all(cleanups.reverse().map(cleanup => cleanup())) },
     command: () => command,
     childRequests,
     disposed,
@@ -184,6 +190,7 @@ const invocation = (rawInput = '', agent: Agent = existingAgent) => ({
 }) as unknown as CommandInvocation
 
 describe('DSH command integration', () => {
+  afterEach(() => vi.useRealTimers())
   it('registers /council and runs children with the selected routes and Web-only filter', async () => {
     const test = harness()
     const command = test.command()
@@ -258,5 +265,114 @@ describe('DSH command integration', () => {
     const cancelled = Object.assign(new Error('the user cancelled ask_user_question'), { code: 'ASK_CANCELLED' })
     const test = harness(async () => Promise.reject(cancelled), undefined, locale)
     await expect(test.command()?.handler(invocation())).resolves.toEqual({ kind: 'error', text: expected })
+  })
+
+  it('does not clear a user message batched with the blank-session marker', async () => {
+    const test = harness()
+    const userMessage = { id: 'ordinary-message' }
+    const mixedAgent = agentWithHistory(true, () => async (payload, next) => {
+      const decision = await next()
+      const result = await test.preStep()?.(payload, async () => ({
+        ...decision, messages: [...decision.messages, userMessage],
+      }))
+      expect(result?.messages).toEqual([userMessage])
+      return { kind: 'enter', messages: [] }
+    })
+    expect(await test.command()?.handler(invocation('', mixedAgent))).toMatchObject({ kind: 'success' })
+  })
+
+  it('does not rename or create an extra turn when the user activates the session during a run', async () => {
+    const blankAgent = agentWithHistory(true)
+    const test = harness(async () => {
+      blankAgent.session.blank = false
+      return pickerAnswers
+    })
+    expect(await test.command()?.handler(invocation('', blankAgent))).toMatchObject({ kind: 'success' })
+    expect(test.renamed).toEqual([])
+    expect(blankAgent.recordedEvents).toEqual([])
+  })
+
+  it('keeps the final answer when retaining the session fails', async () => {
+    const test = harness()
+    const blankAgent = agentWithHistory(true, test.preStep)
+    blankAgent.followup = () => { throw new Error('session closed') }
+    const result = await test.command()?.handler(invocation('', blankAgent))
+    expect(result?.text).toContain('Final answer')
+    expect(result?.text).toContain('session closed')
+  })
+
+  it('returns a localized command error when the projection is missing', async () => {
+    const test = harness(undefined, undefined, 'zh')
+    test.ctx.sessionProjections.snapshot = () => ({ asOfSeq: -1, values: {} })
+    expect(await test.command()?.handler(invocation())).toEqual({
+      kind: 'error', text: '议会失败：DSH 会话元数据不可用。',
+    })
+    expect(test.childRequests).toHaveLength(0)
+  })
+
+  it('bounds a hung provider catalog while preserving the healthy provider', async () => {
+    vi.useFakeTimers()
+    const test = harness(undefined, undefined, 'en', { ...config, childTimeoutMs: 20 })
+    test.ctx.llm.listProviders = () => [{ id: 'p', name: 'Provider' }, { id: 'hung', name: 'Hung' }]
+    const listModels = test.ctx.llm.listModels
+    test.ctx.llm.listModels = provider => provider === 'hung' ? new Promise(() => {}) : listModels(provider)
+    const result = test.command()!.handler(invocation())
+    await vi.advanceTimersByTimeAsync(21)
+    expect(await result).toMatchObject({ kind: 'success' })
+    expect((await result).text).toContain('Provider model discovery timed out.')
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('releases session admission after cancellation during catalog discovery', async () => {
+    const test = harness()
+    const listModels = test.ctx.llm.listModels
+    test.ctx.llm.listModels = () => new Promise(() => {})
+    const controller = new AbortController()
+    const pending = test.command()!.handler({ ...invocation(), signal: controller.signal })
+    controller.abort()
+    expect(await pending).toEqual({ kind: 'error', text: 'Council was canceled.' })
+    test.ctx.llm.listModels = listModels
+    expect(await test.command()!.handler(invocation())).toMatchObject({ kind: 'success' })
+  })
+
+  it('disposes a child whose result never settles when the command is cancelled', async () => {
+    const test = harness()
+    const controller = new AbortController()
+    const disposed: string[] = []
+    test.ctx.subagents.start = async () => ({
+      id: 'pending-child' as SubagentRun['id'],
+      localAgent: undefined,
+      result: new Promise(() => {}),
+      async dispose() { disposed.push('done') },
+    })
+    const started = vi.spyOn(test.ctx.subagents, 'start')
+    const pending = test.command()!.handler({ ...invocation(), signal: controller.signal })
+    await vi.waitFor(() => expect(started).toHaveBeenCalledTimes(2))
+    controller.abort()
+    expect(await pending).toMatchObject({ kind: 'error', text: 'Council was canceled.' })
+    await vi.waitFor(() => expect(disposed).toHaveLength(2))
+  })
+
+  it('unloads promptly while a question provider ignores cancellation', async () => {
+    const test = harness(async () => new Promise(() => {}))
+    const pending = test.command()!.handler(invocation())
+    await test.dispose()
+    expect(await pending).toMatchObject({ kind: 'error', text: 'Council was canceled.' })
+    expect(test.childRequests).toHaveLength(0)
+  })
+
+  it('keeps an in-progress run in its original language while later invocations use the new language', async () => {
+    const test = harness(async () => { test.setLocale('zh'); return pickerAnswers })
+    expect((await test.command()!.handler(invocation())).text).toContain('# Council Decision')
+    expect(test.command()?.description).toBe('运行匿名多模型议会')
+    expect((await test.command()!.handler(invocation())).text).toContain('# 议会裁决')
+  })
+
+  it.each([
+    { childTimeoutMs: 0 }, { runTimeoutMs: 2 ** 31 }, { answerMaxTokens: NaN },
+    { reviewMaxTokens: 1.5 }, { arbiterMaxTokens: Infinity }, { subagentProvider: ' ' },
+    { runTimeoutMs: 1 },
+  ])('rejects invalid configuration before registering the command: %o', (override) => {
+    expect(() => harness(undefined, undefined, 'en', { ...config, ...override })).toThrow('dsh-council:')
   })
 })

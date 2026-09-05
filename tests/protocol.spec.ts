@@ -5,6 +5,7 @@ import {
   parseArbiterOutput,
   parseReviewerOutput,
   renderCouncilResult,
+  renderFailureAudit,
   reviewPrompt,
   shuffle,
 } from '../src/protocol.js'
@@ -55,6 +56,15 @@ describe('structured outputs', () => {
     expect(parseArbiterOutput(value)).toEqual(value)
     expect(parseArbiterOutput({ ...value, answerMarkdown: ' ' })).toBeUndefined()
   })
+
+  it.each([
+    { evaluations: [{ answerId: 'missing', strengths: [], weaknesses: [] }] },
+    { uniqueInsights: [{ answerId: 'missing', insight: 'x' }] },
+    { uniqueInsights: [{ answerId: 'Answer A', insight: ' ' }] },
+    { consensus: [' '] }, { ranking: ['Answer A', 'missing'] },
+  ])('rejects malformed reviewer evidence: %o', (change) => {
+    expect(parseReviewerOutput({ ...validReview, ...change }, ['Answer A', 'Answer B'])).toBeUndefined()
+  })
 })
 
 describe('anonymous protocol', () => {
@@ -103,7 +113,7 @@ describe('anonymous protocol', () => {
         arbiter: model('arbiter/final'),
         question: 'Question',
       },
-      directoryFailures: [],
+      directoryFailures: [{ provider: 'offline', message: 'catalog unavailable' }],
       answers,
       reviews,
       aggregateRanking: aggregateRankings(reviews),
@@ -114,11 +124,22 @@ describe('anonymous protocol', () => {
         blindSpots: ['B'],
         confidenceNotes: 'N',
       },
-      failures: [],
+      failures: [{ stage: 'review', model: model('p/failed'), message: 'refused' }],
     }
     const rendered = renderCouncilResult(result, localeCopies.en)
     expect(rendered).toContain('secret-provider/secret-model')
     expect(rendered).toContain('arbiter/final')
     expect(rendered).toContain('Final answer')
+    expect(rendered).toContain('catalog unavailable')
+    expect(rendered).toContain('refused')
+  })
+
+  it.each(['en', 'zh'] as const)('keeps catalog and stage failures in the %s audit', (locale) => {
+    const copy = localeCopies[locale]
+    const rendered = renderFailureAudit(copy.noAnswers, [{ provider: 'offline', message: 'offline' }],
+      [{ stage: 'answer', model: model('p/a'), message: 'refused' }], copy)
+    expect(rendered).toContain(copy.failed(copy.noAnswers))
+    expect(rendered).toContain(`${copy.catalogStage}: offline`)
+    expect(rendered).toContain(`${copy.stage('answer')}: p/a`)
   })
 })

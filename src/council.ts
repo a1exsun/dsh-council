@@ -1,5 +1,6 @@
 import type { ObjectJsonSchema } from '@deepseek-ai/dsh-tools'
 import type { CouncilCopy } from './locales.js'
+import { withDeadline } from './async.js'
 import {
   aggregateRankings,
   answerPrompt,
@@ -135,6 +136,10 @@ export function parseSelection(
   answers: readonly CouncilAnswer[],
   copy: CouncilCopy,
 ): CouncilSelection {
+  if (new Set(answers.map(answer => answer.id)).size !== answers.length
+    || answers.some(answer => !['answerers', 'reviewers', 'arbiter', 'question'].includes(answer.id))) {
+    throw new Error(copy.invalidSelection)
+  }
   const byId = new Map(answers.map(answer => [answer.id, answer]))
   const byLabel = new Map(directory.models.map(model => [model.optionLabel, model]))
   const answerers = selectedModels(byId.get('answerers'), byLabel, 2, 8, copy.answererRole, copy)
@@ -188,8 +193,14 @@ export function selectionQuestions(directory: ModelDirectory, copy: CouncilCopy)
 async function runStage(
   runtime: CouncilRuntime,
   requests: readonly ChildRequest[],
+  copy: CouncilCopy,
 ): Promise<readonly PromiseSettledResult<ChildOutcome>[]> {
-  return Promise.allSettled(requests.map(request => runtime.runChild(request)))
+  return Promise.allSettled(requests.map(request => runChild(runtime, request, copy)))
+}
+
+function runChild(runtime: CouncilRuntime, request: ChildRequest, copy: CouncilCopy): Promise<ChildOutcome> {
+  return withDeadline(request.signal, request.timeoutMs, copy.childTimedOut,
+    signal => runtime.runChild({ ...request, signal }))
 }
 
 export async function runCouncil(
@@ -208,8 +219,27 @@ export async function runCouncil(
     await runtime.ask(selectionQuestions(directory, copy), commandSignal),
     copy,
   )
-  const runSignal = AbortSignal.any([commandSignal, AbortSignal.timeout(config.runTimeoutMs)])
   const failures: CallFailure[] = []
+  try {
+    return await withDeadline(commandSignal, config.runTimeoutMs, copy.runTimedOut,
+      signal => deliberate(runtime, config, directory, selection, failures, signal, copy))
+  } catch (error: unknown) {
+    commandSignal.throwIfAborted()
+    if (error instanceof CouncilRunError) throw error
+    throw new CouncilRunError(messageOf(error, copy), directory.failures, failures)
+  }
+}
+
+async function deliberate(
+  runtime: CouncilRuntime,
+  config: CouncilConfig,
+  directory: ModelDirectory,
+  selection: CouncilSelection,
+  failures: CallFailure[],
+  runSignal: AbortSignal,
+  copy: CouncilCopy,
+): Promise<CouncilResult> {
+  runSignal.throwIfAborted()
 
   const answerRequests = selection.answerers.map((model, index): ChildRequest => ({
     stage: 'answer',
@@ -221,14 +251,17 @@ export async function runCouncil(
     timeoutMs: config.childTimeoutMs,
     signal: runSignal,
   }))
-  const answerSettlements = await runStage(runtime, answerRequests)
+  const answerSettlements = await runStage(runtime, answerRequests, copy)
   runSignal.throwIfAborted()
   const successfulAnswers: { model: ModelRef; outcome: ChildOutcome }[] = []
   answerSettlements.forEach((settlement, index) => {
     const model = selection.answerers[index] as ModelRef
     if (settlement.status === 'rejected') failures.push(thrownFailure('answer', model, settlement.reason, copy))
     else if (settlement.value.stopReason !== 'completed' || settlement.value.text.trim() === '') {
-      failures.push(childFailure('answer', model, settlement.value, copy))
+      failures.push(childFailure('answer', model, {
+        ...settlement.value,
+        ...(settlement.value.stopReason === 'completed' ? { diagnostic: copy.emptyAnswer } : {}),
+      }, copy))
     } else successfulAnswers.push({ model, outcome: settlement.value })
   })
   if (successfulAnswers.length === 0) {
@@ -253,7 +286,7 @@ export async function runCouncil(
     timeoutMs: config.childTimeoutMs,
     signal: runSignal,
   }))
-  const reviewSettlements = await runStage(runtime, reviewRequests)
+  const reviewSettlements = await runStage(runtime, reviewRequests, copy)
   runSignal.throwIfAborted()
   const reviews: ReviewRecord[] = []
   reviewSettlements.forEach((settlement, index) => {
@@ -268,7 +301,7 @@ export async function runCouncil(
     if (output === undefined) {
       failures.push(childFailure('review', model, {
         ...settlement.value,
-        diagnostic: settlement.value.diagnostic ?? copy.invalidReview,
+        ...(settlement.value.stopReason === 'completed' ? { diagnostic: copy.invalidReview } : {}),
       }, copy))
       return
     }
@@ -297,18 +330,19 @@ export async function runCouncil(
   }
   let arbiterOutcome: ChildOutcome
   try {
-    arbiterOutcome = await runtime.runChild(arbiterRequest)
+    arbiterOutcome = await runChild(runtime, arbiterRequest, copy)
   } catch (error: unknown) {
     failures.push(thrownFailure('arbiter', selection.arbiter, error, copy))
     throw new CouncilRunError(copy.arbiterFailed, directory.failures, failures)
   }
+  runSignal.throwIfAborted()
   const arbiter: ArbiterOutput | undefined = arbiterOutcome.stopReason === 'completed'
     ? parseArbiterOutput(arbiterOutcome.structured)
     : undefined
   if (arbiter === undefined) {
     failures.push(childFailure('arbiter', selection.arbiter, {
       ...arbiterOutcome,
-      diagnostic: arbiterOutcome.diagnostic ?? copy.invalidArbiter,
+      ...(arbiterOutcome.stopReason === 'completed' ? { diagnostic: copy.invalidArbiter } : {}),
     }, copy))
     throw new CouncilRunError(copy.arbiterInvalid, directory.failures, failures)
   }

@@ -8,6 +8,7 @@ import type {} from '@deepseek-ai/dsh-session-title'
 import type {} from '@deepseek-ai/dsh-settings'
 import type { SubagentResult, SubagentRun } from '@deepseek-ai/dsh-subagent'
 import type { AskUserQuestionItem } from '@deepseek-ai/dsh-user-questions'
+import { abortable, withDeadline } from './async.js'
 import {
   CouncilRunError,
   runCouncil,
@@ -39,8 +40,8 @@ export const Config: z<Config> = z.object({
   answerMaxTokens: z.number().step(1).min(1).default(16_384),
   reviewMaxTokens: z.number().step(1).min(1).default(16_384),
   arbiterMaxTokens: z.number().step(1).min(1).default(16_384),
-  childTimeoutMs: z.number().step(1).min(1).default(300_000),
-  runTimeoutMs: z.number().step(1).min(1).default(900_000),
+  childTimeoutMs: z.number().step(1).min(1).max(2_147_483_647).default(300_000),
+  runTimeoutMs: z.number().step(1).min(1).max(2_147_483_647).default(900_000),
   subagentProvider: z.string().default('spawn'),
 })
 
@@ -52,12 +53,12 @@ interface BlankRetention {
 }
 
 /** Read the same blank-session projection that drives DSH's session list. */
-function isBlankSession(ctx: Context, agent: Agent): boolean {
+function isBlankSession(ctx: Context, agent: Agent, copy: CouncilCopy): boolean {
   const values = ctx.sessionProjections.snapshot(agent.session).values as Record<string, unknown>
   const metadata = values.sessionListMetadata
   if (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata)
     || typeof (metadata as Record<string, unknown>).blank !== 'boolean') {
-    throw new Error('dsh-council: sessionListMetadata projection is unavailable')
+    throw new Error(copy.projectionMissing)
   }
   return (metadata as { blank: boolean }).blank
 }
@@ -82,7 +83,7 @@ async function retainBlankCommandSession(
   } finally {
     pending.delete(agentId)
   }
-  if (!retention.consumed) throw new Error('dsh-council: failed to activate the blank command session')
+  if (!retention.consumed) throw new Error(copy.retentionFailed)
   ctx.sessionTitle.rename(agent.session, copy.sessionTitle)
 }
 
@@ -103,10 +104,11 @@ function textOf(result: SubagentResult): string {
     .join('')
 }
 
-async function discover(ctx: Context, signal: AbortSignal, copy: CouncilCopy): Promise<ModelDirectory> {
+async function discover(ctx: Context, signal: AbortSignal, timeoutMs: number, copy: CouncilCopy): Promise<ModelDirectory> {
   signal.throwIfAborted()
   const providers = ctx.llm.listProviders()
-  const settlements = await Promise.allSettled(providers.map(provider => ctx.llm.listModels(provider.id)))
+  const settlements = await Promise.allSettled(providers.map(provider =>
+    withDeadline(signal, timeoutMs, copy.catalogTimedOut, () => ctx.llm.listModels(provider.id))))
   signal.throwIfAborted()
   const models: ModelRef[] = []
   const failures: CatalogFailure[] = []
@@ -156,9 +158,10 @@ function questionsForDsh(questions: readonly CouncilQuestion[]): AskUserQuestion
   }))
 }
 
-async function settleRun(run: SubagentRun): Promise<ChildOutcome> {
+async function settleRun(run: SubagentRun, signal: AbortSignal): Promise<ChildOutcome> {
   try {
-    const result = await run.result
+    const result = await abortable(run.result, signal)
+    signal.throwIfAborted()
     return {
       stopReason: result.stopReason,
       text: textOf(result),
@@ -171,24 +174,24 @@ async function settleRun(run: SubagentRun): Promise<ChildOutcome> {
   }
 }
 
-function runtimeFor(ctx: Context, parent: Agent, provider: string, copy: CouncilCopy): CouncilRuntime {
+function runtimeFor(ctx: Context, parent: Agent, config: Config, copy: CouncilCopy): CouncilRuntime {
   return {
-    discover: signal => discover(ctx, signal, copy),
+    discover: signal => discover(ctx, signal, config.childTimeoutMs, copy),
     async ask(questions, signal) {
-      const result = await ctx.userQuestions.ask({
+      const result = await abortable(ctx.userQuestions.ask({
         agent: parent,
         questions: questionsForDsh(questions),
         signal,
-      })
+      }), signal)
       return answersFromDsh(result.answers)
     },
     async runChild(request: ChildRequest) {
-      const childSignal = AbortSignal.any([request.signal, AbortSignal.timeout(request.timeoutMs)])
-      const run = await ctx.subagents.start(provider, {
+      request.signal.throwIfAborted()
+      const run = await ctx.subagents.start(config.subagentProvider, {
         label: request.label,
         prompt: [{ type: 'text', text: request.prompt }],
         parent,
-        signal: childSignal,
+        signal: request.signal,
         agentOptions: {
           provider: request.model.provider,
           model: request.model.model,
@@ -198,7 +201,7 @@ function runtimeFor(ctx: Context, parent: Agent, provider: string, copy: Council
         toolFilter: { allow: WEB_TOOLS },
         ...(request.outputSchema === undefined ? {} : { outputSchema: request.outputSchema }),
       })
-      return settleRun(run)
+      return settleRun(run, request.signal)
     },
     random: Math.random,
   }
@@ -214,9 +217,11 @@ async function executeCouncil(
 ): Promise<CommandResult> {
   if (invocation.rawInput.trim() !== '') return { kind: 'error', text: copy.usage }
   const signal = AbortSignal.any([invocation.signal, lifecycleSignal])
-  const startedBlank = isBlankSession(ctx, invocation.agent)
+  let startedBlank = false
   let result: CommandResult
   try {
+    signal.throwIfAborted()
+    startedBlank = isBlankSession(ctx, invocation.agent, copy)
     const provider = ctx.subagents.getProvider(config.subagentProvider)
     if (provider === undefined) {
       throw new Error(copy.providerMissing(config.subagentProvider))
@@ -227,7 +232,7 @@ async function executeCouncil(
       throw new Error(copy.providerCapabilities(config.subagentProvider))
     }
     const council = await runCouncil(
-      runtimeFor(ctx, invocation.agent, config.subagentProvider, copy),
+      runtimeFor(ctx, invocation.agent, config, copy),
       config,
       signal,
       copy,
@@ -235,7 +240,7 @@ async function executeCouncil(
     result = { kind: 'success', text: renderCouncilResult(council, copy) }
   } catch (error: unknown) {
     const code = errorCode(error)
-    if (code === 'ASK_CANCELLED' || code === 'ASK_ABORTED') {
+    if (signal.aborted || code === 'ASK_CANCELLED' || code === 'ASK_ABORTED') {
       return { kind: 'error', text: copy.canceled }
     }
     if (error instanceof CouncilRunError) {
@@ -243,17 +248,32 @@ async function executeCouncil(
         kind: 'error',
         text: renderFailureAudit(error.message, error.directoryFailures, error.failures, copy),
       }
-    } else if (signal.aborted) {
-      return { kind: 'error', text: copy.canceled }
     } else {
       result = { kind: 'error', text: copy.failed(messageOf(error, copy.unknownFailure)) }
     }
   }
-  if (startedBlank) await retainBlankCommandSession(ctx, invocation.agent, blankRetentions, copy)
+  if (signal.aborted) return { kind: 'error', text: copy.canceled }
+  if (startedBlank) {
+    try {
+      // A user may have started an ordinary turn while the council was running.
+      if (isBlankSession(ctx, invocation.agent, copy)) {
+        await retainBlankCommandSession(ctx, invocation.agent, blankRetentions, copy)
+      }
+    } catch (error: unknown) {
+      return { ...result, text: `${result.text ?? ''}\n\n${copy.failed(messageOf(error, copy.unknownFailure))}` }
+    }
+  }
   return result
 }
 
 export function apply(ctx: Context, config: Config): void {
+  for (const key of ['answerMaxTokens', 'reviewMaxTokens', 'arbiterMaxTokens', 'childTimeoutMs', 'runTimeoutMs'] as const) {
+    if (!Number.isSafeInteger(config[key]) || config[key] < 1
+      || (key.endsWith('TimeoutMs') && config[key] > 2_147_483_647)) {
+      throw new Error(`dsh-council: ${key} must be a positive integer within the supported range`)
+    }
+  }
+  if (!config.subagentProvider.trim()) throw new Error('dsh-council: subagentProvider must not be empty')
   if (config.runTimeoutMs < config.childTimeoutMs) {
     throw new Error('dsh-council: runTimeoutMs must be greater than or equal to childTimeoutMs')
   }
@@ -270,7 +290,7 @@ export function apply(ctx: Context, config: Config): void {
     if (!decision.messages.some(message => String(message.id) === retention.messageId)) return decision
     retention.consumed = true
     blankRetentions.delete(String(agent.id))
-    return { ...decision, messages: [] }
+    return { ...decision, messages: decision.messages.filter(message => String(message.id) !== retention.messageId) }
   }, { global: true })
   const handler = (invocation: CommandInvocation): Promise<CommandResult> => {
     const copy = copyForSettings(ctx.settings.get('locale'))

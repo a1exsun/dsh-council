@@ -76,7 +76,7 @@ export const arbiterSchema: ObjectJsonSchema = {
 }
 
 function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every(item => typeof item === 'string')
+  return Array.isArray(value) && value.every(item => typeof item === 'string' && item.trim() !== '')
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -112,7 +112,8 @@ export function parseReviewerOutput(value: unknown, answerIds: readonly string[]
     if (!isRecord(entry)
       || typeof entry.answerId !== 'string'
       || !allowed.has(entry.answerId)
-      || typeof entry.insight !== 'string') return undefined
+      || typeof entry.insight !== 'string'
+      || entry.insight.trim() === '') return undefined
     return { answerId: entry.answerId, insight: entry.insight }
   })
   if (uniqueInsights.some(entry => entry === undefined)) return undefined
