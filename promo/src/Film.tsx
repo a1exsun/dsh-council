@@ -145,5 +145,5 @@ export const CouncilFilm = () => <AbsoluteFill style={{fontFamily:'Inter, sans-s
     quote={['A tied ranking. A reasoned synthesis.','Both answers averaged 1.50 across two independent reviews.']}
     note={['INSPECTABLE OUTPUT','Follow the evidence.','Inspect identity mappings, average ranks, confidence notes, and failures.']}/></Sequence>
   <Sequence from={2400 + ENTRY_DURATION} durationInFrames={288}><Outro/></Sequence>
-  <Audio src={staticFile('audio/great-fairy-fountain-preview.mp3')} trimBefore={732} volume={(f)=>interpolate(f,[0,30,DURATION-96,DURATION],[0,0.9,0.9,0],{extrapolateLeft:'clamp',extrapolateRight:'clamp'})}/>
+  <Audio src={staticFile('audio/great-fairy-fountain-preview.mp3')} trimBefore={732} volume={(f)=>interpolate(f,[0,30,DURATION-96,DURATION],[0,0.6,0.6,0],{extrapolateLeft:'clamp',extrapolateRight:'clamp'})}/>
 </AbsoluteFill>;
