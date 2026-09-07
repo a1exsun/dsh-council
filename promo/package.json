@@ -1,27 +1,28 @@
 {
   "name": "dsh-council-promo",
   "version": "1.0.0",
-  "description": "DSH Council product film \u2014 real browser footage, beat-synced Remotion graphics",
+  "description": "DSH Council product film — real browser footage, beat-synced Remotion graphics",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@react-three/fiber": "9.5.0",
     "@remotion/cli": "4.0.521",
+    "@remotion/fonts": "^4.0.521",
+    "@remotion/media": "4.0.521",
+    "@remotion/three": "4.0.521",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.521",
-    "@remotion/media": "4.0.521",
-    "@remotion/three": "4.0.521",
-    "@react-three/fiber": "9.5.0",
     "three": "0.183.2"
   },
   "devDependencies": {
     "@remotion/eslint-config-flat": "4.0.521",
     "@types/react": "19.2.7",
+    "@types/three": "0.183.1",
     "@types/web": "0.0.166",
     "eslint": "9.19.0",
     "prettier": "3.8.1",
-    "typescript": "5.9.3",
-    "@types/three": "0.183.1"
+    "typescript": "5.9.3"
   },
   "scripts": {
     "dev": "remotion studio",
