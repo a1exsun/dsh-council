@@ -39,15 +39,15 @@ Captured in a separate DSH `0.1.2-rc.1` Web instance loading only `@deepseek-ai/
 | `00-entry-topic-navigation.mp4` | 6 s | Use the native question navigation to reach the topic field. |
 | `00-entry-question.mp4` | 18 s | Type the crash-safe queue question. |
 
-These clips now form a 24-second entry chapter after the opening. The previous five chapters retain their original shot order, trims, shot lengths, and chapter lengths; their start times move later by 24 seconds.
+The entry chapter now uses only the new-conversation and command-typing footage, ending before the command response. It lasts 5.2 seconds; model selection and topic entry are shown in chapter 02. The previous five chapters retain their original shot order, trims, shot lengths, and chapter lengths; their start times move later by 5.2 seconds.
 
 ## Local review music
 
 “The Legend of Zelda - Great Fairy Fountain (Chime Remix) [Dubstep]” — **Chime**. Original composition by Koji Kondo; Zelda compositions and properties belong to Nintendo.
 
 - Official artist upload: https://www.youtube.com/watch?v=kQcTLwO064k
-- The review uses 00:00–01:53.6 of the official upload, with volume adjustment and fades. No picture cuts, chapter lengths, or shot timings changed for this soundtrack selection.
+- The review uses 00:00–01:34.8 of the official upload, with the same gain and endpoint fades. Only chapter 01 is shortened; the other chapter cuts and shot timings are unchanged.
 - The first 113.6 seconds measure −7.47 LUFS before mixing. Linear gain is 0.37, targeting approximately −16 LUFS before the endpoint fades.
 - The official description invites YouTubers to use the remix in their videos. No broader promotional synchronization license has been verified.
 - `public/audio/great-fairy-fountain-chime-preview.m4a` is a local-only input excluded from Git. It has not been uploaded to R2 or GitHub.
-- Run `npm run render:review` from `promo/` to render `out/council-review-chime.mp4`. The previous `out/council-review.mp4` remains available for comparison. The published MP4, README embeds, and `hosting.json` remain unchanged until approval.
+- Run `npm run render:review` from `promo/` to render `out/council-review-chime-v2.mp4`. The previous `out/council-review-chime.mp4` remains available for comparison. The published MP4, README embeds, and `hosting.json` remain unchanged until approval.

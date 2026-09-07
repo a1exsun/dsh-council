@@ -4,8 +4,8 @@ import {Scene3D} from './Scene3D';
 import {Overlay} from './Overlay';
 
 export const FPS = 30;
-export const ENTRY_DURATION = 720;
-export const DURATION = 2688 + ENTRY_DURATION; // Original edit plus a 24-second entry chapter.
+export const ENTRY_DURATION = 156;
+export const DURATION = 2688 + ENTRY_DURATION; // Original edit plus a 5.2-second command-entry chapter.
 const ink = '#090e18', lilac = '#b8a4ff', mint = '#b9f4dd';
 const ease = Easing.bezier(0.16, 1, 0.3, 1);
 const ramp = (f:number,a:number,b:number) => interpolate(f,[a,b],[0,1],{extrapolateLeft:'clamp',extrapolateRight:'clamp',easing:ease});
@@ -115,14 +115,11 @@ const Outro = () => {
 
 export const CouncilFilm = () => <AbsoluteFill style={{fontFamily:'Inter, sans-serif',color:'#f3f4f9'}}>
   <Sequence durationInFrames={192}><Intro/></Sequence>
-  <Sequence from={192} durationInFrames={ENTRY_DURATION}><Chapter number="01" title="Start with /council." strap="New conversation. One command. Your question." duration={ENTRY_DURATION}
+  <Sequence from={192} durationInFrames={ENTRY_DURATION}><Chapter number="01" title="Start with /council." strap="New conversation. One command." duration={ENTRY_DURATION}
     shots={[
-      {src:'00-entry-command',from:36,duration:96,crop:[0,0,1600,900]},
-      {src:'00-entry-command',from:132,duration:108,trim:96,crop:[480,260,940,500]},
-      {src:'00-entry-open',from:240,duration:36,crop:[0,0,1600,900]},
-      {src:'00-entry-topic-navigation',from:276,duration:84,crop:[0,0,1600,900]},
-      {src:'00-entry-question',from:360,duration:360,crop:[490,275,900,480]},
-    ]} note={['QUICK START','Right inside DSH.','Create a new conversation, open /council, and enter your question.']}/></Sequence>
+      {src:'00-entry-command',from:36,duration:48,crop:[0,0,1600,900]},
+      {src:'00-entry-command',from:84,duration:72,trim:48,crop:[480,260,940,500]},
+    ]} note={['QUICK START','One command.','Open a new conversation and type /council.']}/></Sequence>
   <Sequence from={192 + ENTRY_DURATION} durationInFrames={480}><Chapter number="02" title="Choose your council." strap="Your models. Three distinct roles." duration={480}
     shots={[
       {src:'01-answerers',from:36,duration:108,trim:0},
