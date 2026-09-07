@@ -32,7 +32,7 @@
     "render": "remotion render CouncilFilm ../docs/assets/dsh-council-promo.mp4 --codec=h264 --crf=18 --concurrency=4",
     "still": "remotion still CouncilFilm ../docs/assets/demo-poster.jpg --frame=180 --image-format=jpeg",
     "typecheck": "tsc --noEmit",
-    "render:review": "remotion render CouncilFilm out/council-review-chime-v3.mp4 --codec=h264 --crf=18 --concurrency=4"
+    "render:review": "remotion render CouncilFilm out/council-review-chime-v4.mp4 --codec=h264 --crf=18 --concurrency=4"
   },
   "sideEffects": [
     "*.css"
