@@ -43,10 +43,11 @@ These clips now form a 24-second entry chapter after the opening. The previous f
 
 ## Local review music
 
-“Great Fairy Fountain” — arranged and produced by **Brock Hewitt: Stories in Sound**, from *MajorLink: Hero's Purpose*. Original composition by Koji Kondo; Zelda compositions and properties belong to Nintendo.
+“The Legend of Zelda - Great Fairy Fountain (Chime Remix) [Dubstep]” — **Chime**. Original composition by Koji Kondo; Zelda compositions and properties belong to Nintendo.
 
-- Artist page: https://brockhewittstories.bandcamp.com/track/great-fairy-fountain
-- The local review uses the artist page's audition audio, from 00:24.4 to the end of the 02:18 recording, with volume adjustment and fades.
-- This recording is all rights reserved. The artist describes cover licenses for music distribution; authorization for a public promotional-video synchronization has not been established. This cut is for local review, not publication.
-- `public/audio/great-fairy-fountain-preview.mp3` is a local-only input excluded from Git. It has not been uploaded to R2 or GitHub.
-- Run `npm run render:review` from `promo/` to render `out/council-review.mp4`. The published MP4, README embeds, and `hosting.json` remain unchanged until approval.
+- Official artist upload: https://www.youtube.com/watch?v=kQcTLwO064k
+- The review uses 00:00–01:53.6 of the official upload, with volume adjustment and fades. No picture cuts, chapter lengths, or shot timings changed for this soundtrack selection.
+- The first 113.6 seconds measure −7.47 LUFS before mixing. Linear gain is 0.37, targeting approximately −16 LUFS before the endpoint fades.
+- The official description invites YouTubers to use the remix in their videos. No broader promotional synchronization license has been verified.
+- `public/audio/great-fairy-fountain-chime-preview.m4a` is a local-only input excluded from Git. It has not been uploaded to R2 or GitHub.
+- Run `npm run render:review` from `promo/` to render `out/council-review-chime.mp4`. The previous `out/council-review.mp4` remains available for comparison. The published MP4, README embeds, and `hosting.json` remain unchanged until approval.
