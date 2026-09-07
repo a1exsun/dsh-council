@@ -5,7 +5,8 @@ import {execFileSync} from 'node:child_process';
 // CDP emits a frame when the real browser paints. Keep the timestamps and
 // duplicate unchanged frames during encoding, preserving the recorded timing.
 const root = resolve(import.meta.dirname, '..');
-for (const name of await readdir(resolve(root, 'recordings'))) {
+const selected = process.argv.slice(2);
+for (const name of selected.length ? selected : await readdir(resolve(root, 'recordings'))) {
   if (!/^\d\d[a-z]?-/.test(name)) continue;
   const folder = resolve(root, 'recordings', name);
   const {seconds, frames} = JSON.parse(await readFile(resolve(folder, 'frames.json'), 'utf8'));
