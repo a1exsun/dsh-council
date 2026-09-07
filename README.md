@@ -148,6 +148,10 @@ Token limits apply per model request. Timeouts are in milliseconds; `runTimeoutM
 
 <p align="center"><a href="CONTRIBUTING.md"><strong>Development setup · Tests · Bug reports →</strong></a></p>
 
----
+## Acknowledgements
 
-<p align="center"><sub>Inspired by <a href="https://github.com/karpathy/llm-council">LLM Council</a> and <a href="https://openrouter.ai/docs/guides/features/plugins/fusion">OpenRouter Fusion</a>.</sub></p>
+<blockquote>
+<p>Thanks to Andrej Karpathy for <a href="https://github.com/karpathy/llm-council"><strong>llm-council</strong></a>, which inspired this project.</p>
+</blockquote>
+
+<p><sub>Review dimensions also draw on <a href="https://openrouter.ai/docs/guides/features/plugins/fusion">OpenRouter Fusion</a>.</sub></p>

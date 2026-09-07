@@ -148,6 +148,10 @@ Token 限额作用于单次模型请求。超时单位为毫秒，`runTimeoutMs`
 
 <p align="center"><a href="CONTRIBUTING.md"><strong>开发环境 · 测试 · 问题反馈 →</strong></a></p>
 
----
+## 引用与鸣谢
 
-<p align="center"><sub>灵感来自 <a href="https://github.com/karpathy/llm-council">LLM Council</a> 与 <a href="https://openrouter.ai/docs/guides/features/plugins/fusion">OpenRouter Fusion</a>。</sub></p>
+<blockquote>
+<p>本项目的想法来自 <a href="https://github.com/karpathy/llm-council"><strong>Andrej Karpathy 的 llm-council</strong></a>。感谢原作者的公开分享。</p>
+</blockquote>
+
+<p><sub>评审维度同时参考了 <a href="https://openrouter.ai/docs/guides/features/plugins/fusion">OpenRouter Fusion</a>。</sub></p>
