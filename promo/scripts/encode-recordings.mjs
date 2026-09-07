@@ -6,7 +6,7 @@ import {execFileSync} from 'node:child_process';
 // duplicate unchanged frames during encoding, preserving the recorded timing.
 const root = resolve(import.meta.dirname, '..');
 for (const name of await readdir(resolve(root, 'recordings'))) {
-  if (!/^\d\d-/.test(name)) continue;
+  if (!/^\d\d[a-z]?-/.test(name)) continue;
   const folder = resolve(root, 'recordings', name);
   const {seconds, frames} = JSON.parse(await readFile(resolve(folder, 'frames.json'), 'utf8'));
   if (!frames.length) throw new Error(`No captured frames in ${name}`);

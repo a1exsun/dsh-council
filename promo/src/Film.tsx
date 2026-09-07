@@ -39,26 +39,27 @@ const Intro = () => {
 };
 
 type Shot = {src:string; from:number; duration:number; trim?:number; crop?:[number,number,number,number]; speed?:number};
-type ChapterProps = {number:string; title:string; strap:string; duration:number; shots:Shot[]; note:[string,string,string]; accent?:string};
+type ChapterProps = {number:string; title:string; strap:string; duration:number; shots:Shot[]; note:[string,string,string]; accent?:string; quote?:[string,string]};
 
 const Recording = ({shot}: {shot:Shot}) => {
   const f=useCurrentFrame();
   const [x,y,w,h]=shot.crop??[310,140,970,590];
   const scale=1260/w;
-  return <div style={{position:'absolute',left:70,top:195,width:1260,height:715,background:'#fff',borderRadius:17,overflow:'hidden',boxShadow:'0 32px 100px #0008',border:'1px solid #b9c3d13b',transform:`perspective(2200px) rotateY(${interpolate(ramp(f,0,36),[0,1],[-1.8,0])}deg)`}}>
+  const bodyHeight=Math.min(673, Math.round(h*scale));
+  return <div style={{position:'absolute',left:70,top:195,width:1260,height:bodyHeight+42,background:'#fff',borderRadius:17,overflow:'hidden',boxShadow:'0 32px 100px #0008',border:'1px solid #b9c3d13b',transform:`perspective(2200px) rotateY(${interpolate(ramp(f,0,36),[0,1],[-1.8,0])}deg)`}}>
     <div style={{height:42,background:'#f4f5f7',display:'flex',alignItems:'center',gap:7,padding:'0 18px',borderBottom:'1px solid #e5e7ec'}}>
       {['#d9dce2','#d9dce2','#d9dce2'].map((c,i)=><div key={i} style={{width:7,height:7,borderRadius:10,background:c}}/>)}
       <span style={{marginLeft:15,fontSize:14,color:'#737d8e',letterSpacing:0.4}}>DeepSeek Harness · Council</span>
       <span style={{marginLeft:'auto',fontSize:11,color:'#778979',letterSpacing:1.5}}>RECORDED IN APP</span>
     </div>
-    <div style={{position:'absolute',left:0,top:42,width:1260,height:673,overflow:'hidden'}}>
+    <div style={{position:'absolute',left:0,top:42,width:1260,height:bodyHeight,overflow:'hidden'}}>
       <Video src={staticFile(`footage/${shot.src}.mp4`)} muted trimBefore={shot.trim??0} playbackRate={shot.speed??1}
-        style={{position:'absolute',width:1600*scale,height:900*scale,left:-x*scale,top:-y*scale+(673-h*scale)/2,maxWidth:'none'}} />
+        style={{position:'absolute',width:1600*scale,height:900*scale,left:-x*scale,top:-y*scale+(bodyHeight-h*scale)/2,maxWidth:'none'}} />
     </div>
   </div>;
 };
 
-const Chapter = ({number,title,strap,duration,shots,note,accent=mint}:ChapterProps) => {
+const Chapter = ({number,title,strap,duration,shots,note,accent=mint,quote}:ChapterProps) => {
   const f = useCurrentFrame();
   const reveal=ramp(f,36,60);
   return <AbsoluteFill>
@@ -67,6 +68,11 @@ const Chapter = ({number,title,strap,duration,shots,note,accent=mint}:ChapterPro
     <div style={{position:'absolute',right:74,top:59,color:'#8c99af',fontSize:16,letterSpacing:2}}>PRODUCT WALKTHROUGH <span style={{color:accent,marginLeft:28}}>{number} / 05</span></div>
     <div style={{position:'absolute',left:74,top:117,fontSize:39,fontWeight:570,letterSpacing:-1.2}}>{title}<span style={{fontSize:18,color:'#8d9bb1',fontWeight:400,letterSpacing:0,marginLeft:27}}>{strap}</span></div>
     {shots.map((shot,i)=><Sequence key={i} from={shot.from} durationInFrames={shot.duration} premountFor={12}><Recording shot={shot}/></Sequence>)}
+    {quote && <div style={{position:'absolute',left:82,top:708,width:1220,opacity:ramp(f,84,108)}}>
+      <div style={{fontSize:14,letterSpacing:2.8,color:accent,marginBottom:16}}>FROM THIS RECORDED RUN</div>
+      <div style={{fontSize:49,letterSpacing:-1.7,fontWeight:570}}>{quote[0]}</div>
+      <div style={{fontSize:23,color:'#a9b6cb',marginTop:17}}>{quote[1]}</div>
+    </div>}
     <div style={{position:'absolute',right:77,top:229,width:425,color:'#8593a9',fontSize:17,lineHeight:1.55}}>
       <div style={{fontSize:132,fontWeight:500,color:accent,lineHeight:1,letterSpacing:-8,marginBottom:20}}>{number}</div>
       <div style={{width:46,height:1,background:'#536079',marginBottom:22}} />
@@ -117,16 +123,18 @@ export const CouncilFilm = () => <AbsoluteFill style={{fontFamily:'Inter, sans-s
       {src:'06-topic',from:348,duration:132,trim:0},
     ]} note={['BUILD YOUR PANEL','Separate roles.','Choose who answers, who reviews, and who makes the final synthesis.']}/></Sequence>
   <Sequence from={672} durationInFrames={384}><Chapter number="02" title="Start independently." strap="Fresh context for every answerer." duration={384}
-    shots={[{src:'08-answer',from:36,duration:348,crop:[280,70,1170,720]}]}
+    shots={[{src:'08-answer',from:36,duration:156,trim:108,crop:[330,90,920,491]},{src:'08b-answer',from:192,duration:192,trim:6,crop:[330,185,920,491]}]}
     note={['INDEPENDENT ANSWERS','More than one view.','Answerers work in parallel, each in a fresh DSH child session.']} accent={lilac}/></Sequence>
   <Sequence from={1056} durationInFrames={480}><Chapter number="03" title="Review the ideas." strap="Anonymous answers. Structured comparison." duration={480}
-    shots={[{src:'09-review',from:36,duration:444,crop:[280,70,1170,720]}]}
+    shots={[{src:'09-review',from:36,duration:444,crop:[840,152,700,374]}]}
     note={['ANONYMOUS REVIEW','Evidence over identity.','Compare strengths, weaknesses, contradictions, and coverage gaps.']}/></Sequence>
   <Sequence from={1536} durationInFrames={480}><Chapter number="04" title="Reach a reasoned decision." strap="One synthesis, with its assumptions." duration={480}
-    shots={[{src:'10-decision',from:36,duration:444,crop:[270,55,1200,750]}]}
+    shots={[{src:'10-decision',from:36,duration:444,crop:[352,383,882,274]}]}
+    quote={['PostgreSQL leasing.','At-least-once delivery · Idempotency keys · Ownership checks']}
     note={['FINAL SYNTHESIS','Resolve the trade-offs.','The arbiter weighs answers and reviews to explain a final recommendation.']} accent={lilac}/></Sequence>
   <Sequence from={2016} durationInFrames={384}><Chapter number="05" title="Inspect the reasoning." strap="The result is only the beginning." duration={384}
-    shots={[{src:'11-audit',from:36,duration:348,crop:[270,55,1200,750]}]}
+    shots={[{src:'11-audit',from:36,duration:348,crop:[352,383,882,274]}]}
+    quote={['A tied ranking. A reasoned synthesis.','Both answers averaged 1.50 across two independent reviews.']}
     note={['INSPECTABLE OUTPUT','Follow the evidence.','Inspect identity mappings, average ranks, confidence notes, and failures.']}/></Sequence>
   <Sequence from={2400} durationInFrames={288}><Outro/></Sequence>
   <Audio src={staticFile('audio/cipher.mp3')} trimBefore={1} volume={(f)=>interpolate(f,[0,18,2592,2688],[0,0.64,0.64,0],{extrapolateLeft:'clamp',extrapolateRight:'clamp'})}/>
