@@ -1,7 +1,9 @@
+import type {ReactNode} from 'react';
 import {AbsoluteFill, Easing, interpolate, Sequence, staticFile, useCurrentFrame} from 'remotion';
 import {Audio, Video} from '@remotion/media';
 import {Scene3D} from './Scene3D';
 import {Overlay} from './Overlay';
+import {ReviewBoard} from './ReviewBoard';
 
 export const FPS = 30;
 export const ENTRY_DURATION = 156;
@@ -39,7 +41,7 @@ const Intro = () => {
 };
 
 type Shot = {src:string; from:number; duration:number; trim?:number; crop?:[number,number,number,number]; speed?:number};
-type ChapterProps = {number:string; title:string; strap:string; duration:number; shots:Shot[]; note:[string,string,string]; accent?:string; quote?:[string,string]};
+type ChapterProps = {number:string; title:string; strap:string; duration:number; shots?:Shot[]; children?:ReactNode; note:[string,string,string]; accent?:string; quote?:[string,string]};
 
 const Recording = ({shot}: {shot:Shot}) => {
   const f=useCurrentFrame();
@@ -59,7 +61,7 @@ const Recording = ({shot}: {shot:Shot}) => {
   </div>;
 };
 
-const Chapter = ({number,title,strap,duration,shots,note,accent=mint,quote}:ChapterProps) => {
+const Chapter = ({number,title,strap,duration,shots=[],children,note,accent=mint,quote}:ChapterProps) => {
   const f = useCurrentFrame();
   const reveal=ramp(f,36,60);
   return <AbsoluteFill>
@@ -68,6 +70,7 @@ const Chapter = ({number,title,strap,duration,shots,note,accent=mint,quote}:Chap
     <div style={{position:'absolute',right:74,top:59,color:'#8c99af',fontSize:16,letterSpacing:2}}>PRODUCT WALKTHROUGH <span style={{color:accent,marginLeft:28}}>{number} / 06</span></div>
     <div style={{position:'absolute',left:74,top:117,fontSize:39,fontWeight:570,letterSpacing:-1.2}}>{title}<span style={{fontSize:18,color:'#8d9bb1',fontWeight:400,letterSpacing:0,marginLeft:27}}>{strap}</span></div>
     {shots.map((shot,i)=><Sequence key={i} from={shot.from} durationInFrames={shot.duration} premountFor={12}><Recording shot={shot}/></Sequence>)}
+    {children && <Sequence from={36} durationInFrames={duration-36}>{children}</Sequence>}
     {quote && <div style={{position:'absolute',left:82,top:708,width:1220,opacity:ramp(f,84,108)}}>
       <div style={{fontSize:14,letterSpacing:2.8,color:accent,marginBottom:16}}>FROM THIS RECORDED RUN</div>
       <div style={{fontSize:49,letterSpacing:-1.7,fontWeight:570}}>{quote[0]}</div>
@@ -131,8 +134,7 @@ export const CouncilFilm = () => <AbsoluteFill style={{fontFamily:'Inter, sans-s
     shots={[{src:'08-answer',from:36,duration:156,trim:108,crop:[330,90,920,491]},{src:'08b-answer',from:192,duration:192,trim:6,crop:[330,185,920,491]}]}
     note={['INDEPENDENT ANSWERS','More than one view.','Answerers work in parallel, each in a fresh DSH child session.']} accent={lilac}/></Sequence>
   <Sequence from={1056 + ENTRY_DURATION} durationInFrames={480}><Chapter number="04" title="Review the ideas." strap="Anonymous answers. Structured comparison." duration={480}
-    shots={[{src:'09-review',from:36,duration:444,crop:[840,152,700,374]}]}
-    note={['ANONYMOUS REVIEW','Evidence over identity.','Compare strengths, weaknesses, contradictions, and coverage gaps.']}/></Sequence>
+    note={['ANONYMOUS REVIEW','Evidence over identity.','Compare strengths, find weaknesses, and rank the ideas.']}><ReviewBoard/></Chapter></Sequence>
   <Sequence from={1536 + ENTRY_DURATION} durationInFrames={480}><Chapter number="05" title="Reach a reasoned decision." strap="One synthesis, with its assumptions." duration={480}
     shots={[{src:'10-decision',from:36,duration:444,crop:[352,383,882,274]}]}
     quote={['PostgreSQL leasing.','At-least-once delivery · Idempotency keys · Ownership checks']}

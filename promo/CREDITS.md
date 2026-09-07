@@ -46,8 +46,17 @@ The entry chapter now uses only the new-conversation and command-typing footage,
 “The Legend of Zelda - Great Fairy Fountain (Chime Remix) [Dubstep]” — **Chime**. Original composition by Koji Kondo; Zelda compositions and properties belong to Nintendo.
 
 - Official artist upload: https://www.youtube.com/watch?v=kQcTLwO064k
-- The review uses 00:00–01:34.8 of the official upload, with the same gain and endpoint fades. Only chapter 01 is shortened; the other chapter cuts and shot timings are unchanged.
+- The review uses 00:00–01:34.8 of the official upload, with the same gain and endpoint fades. Chapter 01 is shortened. Chapter 04 replaces the technical Payload inspector with editorial comparison cards while keeping its 16-second duration; the remaining chapter cuts and shot timings are unchanged.
 - The first 113.6 seconds measure −7.47 LUFS before mixing. Linear gain is 0.37, targeting approximately −16 LUFS before the endpoint fades.
 - The official description invites YouTubers to use the remix in their videos. No broader promotional synchronization license has been verified.
 - `public/audio/great-fairy-fountain-chime-preview.m4a` is a local-only input excluded from Git. It has not been uploaded to R2 or GitHub.
-- Run `npm run render:review` from `promo/` to render `out/council-review-chime-v2.mp4`. The previous `out/council-review-chime.mp4` remains available for comparison. The published MP4, README embeds, and `hosting.json` remain unchanged until approval.
+- Run `npm run render:review` from `promo/` to render `out/council-review-chime-v3.mp4`. The previous `out/council-review-chime.mp4` remains available for comparison. The published MP4, README embeds, and `hosting.json` remain unchanged until approval.
+
+### Chapter 04 review evidence
+
+`ReviewBoard.tsx` is an editorial visualization of the recorded run, not a product UI mockup. It replaces the Payload-inspector footage.
+
+- The second reviewer praised Answer A's concrete atomic-claim SQL and noted that expired running jobs require an explicit reclaim path.
+- The second reviewer praised Answer B's authoritative PostgreSQL and AWS sources and warned that recording intent must not be treated as confirmed completion.
+- The recorded audit gives both Answer A and Answer B an average rank of 1.50 across two votes and states that both recommend PostgreSQL.
+- These values match the recorded final output saved locally in `recordings/decision.md` and the original source footage. No model identity is shown on the comparison cards.
