@@ -23,17 +23,46 @@ https://github.com/user-attachments/assets/c643490c-1076-4abe-a832-e10f02eb5eda
 
 ## How it works
 
-1. **Answer:** 2–8 models respond independently in parallel.
-2. **Review:** 1–8 reviewers compare anonymous answers, identify gaps, and rank them.
-3. **Decide:** one arbiter weighs the answers and reviews to produce a final recommendation.
-
-Council uses your configured DSH providers and credentials. Choose models separately for each role; the same model can serve in multiple roles. English and Chinese follow DSH's language setting.
-
-The result includes confidence notes, consensus, disagreements, blind spots, model identities, and average rankings. Original answers and reviews remain available in DSH's child sessions.
+<table>
+<tr>
+<td width="33%" valign="top">
+<h3>01 · Answer</h3>
+<p>2–8 models respond independently in parallel.</p>
+</td>
+<td width="33%" valign="top">
+<h3>02 · Review</h3>
+<p>1–8 reviewers compare anonymous answers, identify gaps, and rank them.</p>
+</td>
+<td width="33%" valign="top">
+<h3>03 · Decide</h3>
+<p>One arbiter weighs the answers and reviews to produce a final recommendation.</p>
+</td>
+</tr>
+<tr>
+<td colspan="3">
+<p><strong>Your models.</strong> Use configured DSH providers and credentials. Choose models separately for each role, with reuse across roles. English and Chinese follow DSH's language setting.</p>
+<p><strong>Inspectable results.</strong> Confidence notes, consensus, disagreements, blind spots, model identities, and average rankings. Original answers and reviews remain in DSH's child sessions.</p>
+</td>
+</tr>
+</table>
 
 ## Installation
 
-Requires **Node.js `^22.19.0 || >=24.0.0`**, **pnpm 11.7.0**, and DSH with at least two configured, authenticated models.
+<table>
+<tr>
+<th>Node.js</th>
+<th>pnpm</th>
+<th>DeepSeek Harness</th>
+</tr>
+<tr>
+<td><code>^22.19.0 || >=24.0.0</code></td>
+<td><code>11.7.0</code></td>
+<td>At least two configured, authenticated models</td>
+</tr>
+</table>
+
+<details open>
+<summary><strong>Install from source</strong></summary>
 
 ```sh
 git clone https://github.com/a1exsun/dsh-council.git
@@ -44,7 +73,9 @@ npx --yes @deepseek-ai/dsh@latest plugin --profile web add .
 npx --yes @deepseek-ai/dsh@latest web
 ```
 
-Restart DSH Web if it is already running.
+<blockquote><p>Restart DSH Web if it is already running.</p></blockquote>
+
+</details>
 
 ## Usage
 
@@ -54,17 +85,47 @@ Enter this command in a DSH Web conversation:
 /council
 ```
 
-Choose the answerers, reviewers, and arbiter, then enter your question. For example:
+<table>
+<tr>
+<td width="35%" valign="top">
+<h3>Choose your panel</h3>
+<p>Select answerers, reviewers, and an arbiter. Selections apply to one run.</p>
+</td>
+<td width="65%" valign="top">
+<h3>Ask your question</h3>
+<p>Each participant starts with fresh context. Include the information it needs in your question.</p>
+</td>
+</tr>
+</table>
+
+<details open>
+<summary><strong>Example question</strong></summary>
 
 > Compare PostgreSQL leasing with a managed message queue for three workers. Explain how each recovers when a worker crashes after an external side effect but before acknowledging the job. Recommend one design and state its assumptions.
 
-Each participant starts with fresh context, so include the information it needs in your question. Model selections apply to one run.
+</details>
 
-- **Cost:** each run creates 4–17 model participants. Each may make multiple requests and use Web tools.
-- **Privacy:** the question and intermediate answers are sent to your selected providers. See [Security](SECURITY.md).
-- **Accuracy:** agreement among models does not guarantee correctness. Review the evidence and confidence notes.
+<table>
+<tr>
+<td width="33%" valign="top">
+<p><strong>Cost</strong></p>
+<p>4–17 model participants per run. Each may make multiple requests and use Web tools.</p>
+</td>
+<td width="33%" valign="top">
+<p><strong>Privacy</strong></p>
+<p>Your question and intermediate answers go to selected providers. See <a href="SECURITY.md">Security</a>.</p>
+</td>
+<td width="33%" valign="top">
+<p><strong>Accuracy</strong></p>
+<p>Model agreement does not guarantee correctness. Review the evidence and confidence notes.</p>
+</td>
+</tr>
+</table>
 
 ## Configuration
+
+<details>
+<summary><strong>Defaults and overrides</strong></summary>
 
 The defaults work without additional configuration. To adjust limits, set `config` on the `dsh-council` entry in your DSH profile:
 
@@ -81,8 +142,12 @@ The defaults work without additional configuration. To adjust limits, set `confi
 
 Token limits apply per model request. Timeouts are in milliseconds; `runTimeoutMs` must be at least `childTimeoutMs`.
 
+</details>
+
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, tests, and bug reports.
+<p align="center"><a href="CONTRIBUTING.md"><strong>Development setup · Tests · Bug reports →</strong></a></p>
 
-Inspired by [LLM Council](https://github.com/karpathy/llm-council) and [OpenRouter Fusion](https://openrouter.ai/docs/guides/features/plugins/fusion).
+---
+
+<p align="center"><sub>Inspired by <a href="https://github.com/karpathy/llm-council">LLM Council</a> and <a href="https://openrouter.ai/docs/guides/features/plugins/fusion">OpenRouter Fusion</a>.</sub></p>
