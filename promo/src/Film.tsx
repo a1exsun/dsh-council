@@ -4,8 +4,8 @@ import {Scene3D} from './Scene3D';
 import {Overlay} from './Overlay';
 
 export const FPS = 30;
-export const BEAT = 12; // Cipher — 150 BPM, 30 fps, phase corrected by one frame.
-export const DURATION = 2688; // 224 beats / 56 bars / 89.6 seconds.
+export const ENTRY_DURATION = 720;
+export const DURATION = 2688 + ENTRY_DURATION; // Original edit plus a 24-second entry chapter.
 const ink = '#090e18', lilac = '#b8a4ff', mint = '#b9f4dd';
 const ease = Easing.bezier(0.16, 1, 0.3, 1);
 const ramp = (f:number,a:number,b:number) => interpolate(f,[a,b],[0,1],{extrapolateLeft:'clamp',extrapolateRight:'clamp',easing:ease});
@@ -65,7 +65,7 @@ const Chapter = ({number,title,strap,duration,shots,note,accent=mint,quote}:Chap
   return <AbsoluteFill>
     <Background />
     <div style={{position:'absolute',left:74,top:57}}><Brand/></div>
-    <div style={{position:'absolute',right:74,top:59,color:'#8c99af',fontSize:16,letterSpacing:2}}>PRODUCT WALKTHROUGH <span style={{color:accent,marginLeft:28}}>{number} / 05</span></div>
+    <div style={{position:'absolute',right:74,top:59,color:'#8c99af',fontSize:16,letterSpacing:2}}>PRODUCT WALKTHROUGH <span style={{color:accent,marginLeft:28}}>{number} / 06</span></div>
     <div style={{position:'absolute',left:74,top:117,fontSize:39,fontWeight:570,letterSpacing:-1.2}}>{title}<span style={{fontSize:18,color:'#8d9bb1',fontWeight:400,letterSpacing:0,marginLeft:27}}>{strap}</span></div>
     {shots.map((shot,i)=><Sequence key={i} from={shot.from} durationInFrames={shot.duration} premountFor={12}><Recording shot={shot}/></Sequence>)}
     {quote && <div style={{position:'absolute',left:82,top:708,width:1220,opacity:ramp(f,84,108)}}>
@@ -79,11 +79,11 @@ const Chapter = ({number,title,strap,duration,shots,note,accent=mint,quote}:Chap
       <div style={{fontSize:21,color:'#c3ccdb'}}>One question.<br/>A complete deliberation.</div>
     </div>
     <Sequence from={72} durationInFrames={duration-72}><Overlay eyebrow={note[0]} title={note[1]} detail={note[2]} accent={accent}/></Sequence>
-    <div style={{position:'absolute',bottom:57,left:75,right:75,display:'flex',gap:12}}>{['SELECT','ANSWER','REVIEW','DECIDE','INSPECT'].map((s,i)=><div key={s} style={{flex:1}}>
+    <div style={{position:'absolute',bottom:57,left:75,right:75,display:'flex',gap:12}}>{['START','SELECT','ANSWER','REVIEW','DECIDE','INSPECT'].map((s,i)=><div key={s} style={{flex:1}}>
       <div style={{height:2,background:i+1===Number(number)?accent:'#2c3547',marginBottom:13}}/>
       <div style={{fontSize:12,letterSpacing:2,color:i+1===Number(number)?accent:'#66758d'}}>{s}</div>
     </div>)}</div>
-    {/* Full-screen chapter cards. Their shutters leave on the musical downbeat. */}
+    {/* Full-screen chapter cards; existing transition timing is preserved. */}
     {f<60 && <AbsoluteFill style={{background:ink,clipPath:`inset(0 ${reveal*100}% 0 0)`,overflow:'hidden'}}>
       <div style={{position:'absolute',left:82,top:60}}><Brand/></div>
       <div style={{position:'absolute',left:80,top:217,color:accent,fontSize:18,letterSpacing:5}}>CHAPTER {number}</div>
@@ -115,27 +115,35 @@ const Outro = () => {
 
 export const CouncilFilm = () => <AbsoluteFill style={{fontFamily:'Inter, sans-serif',color:'#f3f4f9'}}>
   <Sequence durationInFrames={192}><Intro/></Sequence>
-  <Sequence from={192} durationInFrames={480}><Chapter number="01" title="Choose your council." strap="Your models. Three distinct roles." duration={480}
+  <Sequence from={192} durationInFrames={ENTRY_DURATION}><Chapter number="01" title="Start with /council." strap="New conversation. One command. Your question." duration={ENTRY_DURATION}
+    shots={[
+      {src:'00-entry-command',from:60,duration:72,crop:[0,0,1600,900]},
+      {src:'00-entry-command',from:132,duration:108,trim:72,crop:[480,260,940,500]},
+      {src:'00-entry-open',from:240,duration:36,crop:[0,0,1600,900]},
+      {src:'00-entry-topic-navigation',from:276,duration:84,crop:[0,0,1600,900]},
+      {src:'00-entry-question',from:360,duration:360,crop:[490,275,900,480]},
+    ]} note={['QUICK START','Right inside DSH.','Create a new conversation, open /council, and enter your question.']}/></Sequence>
+  <Sequence from={192 + ENTRY_DURATION} durationInFrames={480}><Chapter number="02" title="Choose your council." strap="Your models. Three distinct roles." duration={480}
     shots={[
       {src:'01-answerers',from:36,duration:108,trim:0},
       {src:'03-reviewers-select',from:144,duration:108,trim:0},
       {src:'04-arbiter-open',from:252,duration:96,trim:0},
       {src:'06-topic',from:348,duration:132,trim:0},
     ]} note={['BUILD YOUR PANEL','Separate roles.','Choose who answers, who reviews, and who makes the final synthesis.']}/></Sequence>
-  <Sequence from={672} durationInFrames={384}><Chapter number="02" title="Start independently." strap="Fresh context for every answerer." duration={384}
+  <Sequence from={672 + ENTRY_DURATION} durationInFrames={384}><Chapter number="03" title="Start independently." strap="Fresh context for every answerer." duration={384}
     shots={[{src:'08-answer',from:36,duration:156,trim:108,crop:[330,90,920,491]},{src:'08b-answer',from:192,duration:192,trim:6,crop:[330,185,920,491]}]}
     note={['INDEPENDENT ANSWERS','More than one view.','Answerers work in parallel, each in a fresh DSH child session.']} accent={lilac}/></Sequence>
-  <Sequence from={1056} durationInFrames={480}><Chapter number="03" title="Review the ideas." strap="Anonymous answers. Structured comparison." duration={480}
+  <Sequence from={1056 + ENTRY_DURATION} durationInFrames={480}><Chapter number="04" title="Review the ideas." strap="Anonymous answers. Structured comparison." duration={480}
     shots={[{src:'09-review',from:36,duration:444,crop:[840,152,700,374]}]}
     note={['ANONYMOUS REVIEW','Evidence over identity.','Compare strengths, weaknesses, contradictions, and coverage gaps.']}/></Sequence>
-  <Sequence from={1536} durationInFrames={480}><Chapter number="04" title="Reach a reasoned decision." strap="One synthesis, with its assumptions." duration={480}
+  <Sequence from={1536 + ENTRY_DURATION} durationInFrames={480}><Chapter number="05" title="Reach a reasoned decision." strap="One synthesis, with its assumptions." duration={480}
     shots={[{src:'10-decision',from:36,duration:444,crop:[352,383,882,274]}]}
     quote={['PostgreSQL leasing.','At-least-once delivery · Idempotency keys · Ownership checks']}
     note={['FINAL SYNTHESIS','Resolve the trade-offs.','The arbiter weighs answers and reviews to explain a final recommendation.']} accent={lilac}/></Sequence>
-  <Sequence from={2016} durationInFrames={384}><Chapter number="05" title="Inspect the reasoning." strap="The result is only the beginning." duration={384}
+  <Sequence from={2016 + ENTRY_DURATION} durationInFrames={384}><Chapter number="06" title="Inspect the reasoning." strap="The result is only the beginning." duration={384}
     shots={[{src:'11-audit',from:36,duration:348,crop:[352,383,882,274]}]}
     quote={['A tied ranking. A reasoned synthesis.','Both answers averaged 1.50 across two independent reviews.']}
     note={['INSPECTABLE OUTPUT','Follow the evidence.','Inspect identity mappings, average ranks, confidence notes, and failures.']}/></Sequence>
-  <Sequence from={2400} durationInFrames={288}><Outro/></Sequence>
-  <Audio src={staticFile('audio/cipher.mp3')} trimBefore={1} volume={(f)=>interpolate(f,[0,18,2592,2688],[0,0.64,0.64,0],{extrapolateLeft:'clamp',extrapolateRight:'clamp'})}/>
+  <Sequence from={2400 + ENTRY_DURATION} durationInFrames={288}><Outro/></Sequence>
+  <Audio src={staticFile('audio/cipher.mp3')} trimBefore={1} volume={(f)=>interpolate(f,[0,18,DURATION-96,DURATION],[0,0.64,0.64,0],{extrapolateLeft:'clamp',extrapolateRight:'clamp'})}/>
 </AbsoluteFill>;
