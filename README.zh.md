@@ -14,7 +14,7 @@
 
 <p><a href="#安装">安装</a> · <a href="#工作流程">工作流程</a> · <a href="#配置">配置</a> · <a href="#参与贡献">参与贡献</a></p>
 
-https://github.com/user-attachments/assets/c643490c-1076-4abe-a832-e10f02eb5eda
+https://github.com/user-attachments/assets/e81dfa36-5d93-4efb-8c67-015a5e4d2179
 
 
 </div>

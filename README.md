@@ -14,7 +14,7 @@
 
 <p><a href="#installation">Installation</a> · <a href="#how-it-works">How it works</a> · <a href="#configuration">Configuration</a> · <a href="#contributing">Contributing</a></p>
 
-https://github.com/user-attachments/assets/c643490c-1076-4abe-a832-e10f02eb5eda
+https://github.com/user-attachments/assets/e81dfa36-5d93-4efb-8c67-015a5e4d2179
 
 
 </div>

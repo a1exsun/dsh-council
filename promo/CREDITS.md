@@ -1,57 +1,30 @@
 # Credits and asset provenance
 
-## Published film music
+## Music
 
-“Cipher” — Kevin MacLeod (incompetech.com).
-Licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).
+**“The Legend of Zelda - Great Fairy Fountain (Chime Remix) [Dubstep]” — Chime.** Original composition by Koji Kondo; Zelda compositions and properties belong to Nintendo.
 
-- [Official track and attribution](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100844)
-- [Official MP3](https://incompetech.com/music/royalty-free/mp3-royaltyfree/Cipher2.mp3)
-- ISRC: USUAN1100844. Published tempo: 150 BPM.
-- The film uses an excerpt, shifts the audio by one frame (33.33 ms), reduces its volume, and fades both ends.
-- At 30 fps, one beat is 12 frames and one 4/4 bar is 48 frames. An RMS onset check at 100 Hz found the strongest beat phase at 30 ms, within one analysis hop of the selected frame.
-- This credit is also present on the film's end card and in both project READMEs.
+- [Official artist upload](https://www.youtube.com/watch?v=kQcTLwO064k).
+- The film uses 00:00–01:34.8, with linear gain of 0.37 and fades at both ends.
+- Chime's upload description invites YouTubers to use the remix in their videos. No broader synchronization license is represented here.
+- The composer, remixer, and official source are credited on the film's end card.
+- The standalone audio input, `public/audio/great-fairy-fountain-chime-preview.m4a`, is excluded from Git and is not distributed separately with this repository.
 
 ## Typography
 
-Inter, distributed under the SIL Open Font License. Original font and license are in `public/fonts/`.
-Source: [Google Fonts / Inter](https://github.com/google/fonts/tree/main/ofl/inter).
+[Inter](https://github.com/google/fonts/tree/main/ofl/inter), under the SIL Open Font License. The font and license are in `public/fonts/`.
 
 ## Motion references
 
-- [Remotion template-overlay](https://github.com/remotion-dev/template-overlay): spring-based editorial card entrance and frame-driven transforms.
-- [Remotion template-three](https://github.com/remotion-dev/template-three): `ThreeCanvas`, explicit lighting, and a deterministic 3D scene. The film's orbiting input cards and central decision sculpture are authored for DSH Council.
+- [Remotion template-overlay](https://github.com/remotion-dev/template-overlay): spring-driven floating cards.
+- [Remotion template-three](https://github.com/remotion-dev/template-three): `ThreeCanvas` and frame-driven 3D animation. The orbiting cards and central sculpture were created for this film.
 
-## Product footage
+## Recordings
 
-Recorded by operating the current local DeepSeek Harness Web UI in Chrome, using the actual installed Council command and configured providers. The browser's `Page.startScreencast` emitted JPEG frames with timestamps; `scripts/encode-recordings.mjs` preserves that timing and encodes 30 fps MP4 clips. Unchanged browser frames are held for their recorded duration. No UI replicas or fabricated model responses are used.
+The footage was recorded by operating the installed Council plugin in DSH Web through Chrome. Browser paints were captured with timestamps and encoded to 30 fps MP4 with `scripts/encode-recordings.mjs`; unchanged frames retain their recorded duration. Source clips are in `public/footage/`.
 
-The source frames are local production intermediates under ignored `recordings/`. The encoded source clips in `public/footage/` are included so rendering does not depend on the local DSH server, its credentials, or another model invocation. Editing crops the page, changes the shot duration, and adds clearly separate editorial graphics. Waiting between model stages is omitted.
+The introductory footage uses a separate standard DSH `0.1.2-rc.1` instance with only the official base and Web bundles plus Council. Chapter 01 ends at `/council` input. Model selection and question entry follow in chapter 02.
 
-### Additional entry footage
+The deliberation footage comes from a completed run comparing PostgreSQL leasing with a managed job queue. Both answers, both reviews, and arbitration completed successfully. The audit reports an average rank of 1.50 for each answer, with two votes each.
 
-Captured in a separate DSH `0.1.2-rc.1` Web instance loading only `@deepseek-ai/dsh-base`, `@deepseek-ai/dsh-web-app`, and `dsh-council`, with the existing model configuration. The interface is the standard DSH UI. No model run was submitted.
-
-| Clip | Duration | Action |
-| :--- | ---: | :--- |
-| `00-entry-command.mp4` | 9 s | Open a new conversation and type `/council`. |
-| `00-entry-open.mp4` | 5 s | Activate the command and open Council's question card. |
-| `00-entry-topic-navigation.mp4` | 6 s | Use the native question navigation to reach the topic field. |
-| `00-entry-question.mp4` | 18 s | Type the crash-safe queue question. |
-
-The entry chapter now uses only the new-conversation and command-typing footage, ending before the command response. It lasts 5.2 seconds; model selection and topic entry are shown in chapter 02. The previous five chapters retain their original shot order, trims, shot lengths, and chapter lengths; their start times move later by 5.2 seconds.
-
-## Local review music
-
-“The Legend of Zelda - Great Fairy Fountain (Chime Remix) [Dubstep]” — **Chime**. Original composition by Koji Kondo; Zelda compositions and properties belong to Nintendo.
-
-- Official artist upload: https://www.youtube.com/watch?v=kQcTLwO064k
-- The review uses 00:00–01:34.8 of the official upload, with the same gain and endpoint fades. Chapter 01 is shortened. Chapter 04 shows the full recorded DSH viewport, including its navigation, trajectory, and detail pane, while keeping its 16-second duration; the remaining chapter cuts and shot timings are unchanged.
-- The first 113.6 seconds measure −7.47 LUFS before mixing. Linear gain is 0.37, targeting approximately −16 LUFS before the endpoint fades.
-- The official description invites YouTubers to use the remix in their videos. No broader promotional synchronization license has been verified.
-- `public/audio/great-fairy-fountain-chime-preview.m4a` is a local-only input excluded from Git. It has not been uploaded to R2 or GitHub.
-- Run `npm run render:review` from `promo/` to render `out/council-review-chime-v4.mp4`. The previous `out/council-review-chime.mp4` remains available for comparison. The published MP4, README embeds, and `hosting.json` remain unchanged until approval.
-
-### Chapter 04 framing
-
-Chapter 04 uses `09-review.mp4` with contain scaling: the entire 1600 × 900 source frame fits inside the video area without cropping. DSH's navigation, the left-hand execution trajectory, and the right-hand details pane remain visible together. The editorial comparison cards have been removed. Chapter timing and the other chapters are unchanged.
+Chapter 04 displays the entire 1600 × 900 frame from `09-review.mp4`, including DSH navigation, execution trajectory, and the details pane. The final-answer and audit chapters retain the host's native text presentation. Editorial overlays are separate from the recorded UI; no model responses were fabricated.

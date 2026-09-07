@@ -1,7 +1,7 @@
 {
   "name": "dsh-council-promo",
   "version": "1.0.0",
-  "description": "DSH Council product film \u2014 real browser footage, beat-synced Remotion graphics",
+  "description": "DSH Council product film — real DSH recordings and Remotion graphics",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
