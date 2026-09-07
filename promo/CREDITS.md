@@ -1,6 +1,6 @@
 # Credits and asset provenance
 
-## Music
+## Published film music
 
 “Cipher” — Kevin MacLeod (incompetech.com).
 Licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).
@@ -39,4 +39,14 @@ Captured in a separate DSH `0.1.2-rc.1` Web instance loading only `@deepseek-ai/
 | `00-entry-topic-navigation.mp4` | 6 s | Use the native question navigation to reach the topic field. |
 | `00-entry-question.mp4` | 18 s | Type the crash-safe queue question. |
 
-These clips are unedited source material in `public/footage/` and have not been added to the composition. Re-editing and the requested change to an arrangement of “Great Fairy's Fountain” are paused; no arrangement has been selected or downloaded.
+These clips now form a 24-second entry chapter after the opening. The previous five chapters retain their original shot order, trims, shot lengths, and chapter lengths; their start times move later by 24 seconds.
+
+## Local review music
+
+“Great Fairy Fountain” — arranged and produced by **Brock Hewitt: Stories in Sound**, from *MajorLink: Hero's Purpose*. Original composition by Koji Kondo; Zelda compositions and properties belong to Nintendo.
+
+- Artist page: https://brockhewittstories.bandcamp.com/track/great-fairy-fountain
+- The local review uses the artist page's audition audio, from 00:24.4 to the end of the 02:18 recording, with volume adjustment and fades.
+- This recording is all rights reserved. The artist describes cover licenses for music distribution; authorization for a public promotional-video synchronization has not been established. This cut is for local review, not publication.
+- `public/audio/great-fairy-fountain-preview.mp3` is a local-only input excluded from Git. It has not been uploaded to R2 or GitHub.
+- Run `npm run render:review` from `promo/` to render `out/council-review.mp4`. The published MP4, README embeds, and `hosting.json` remain unchanged until approval.

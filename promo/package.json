@@ -1,7 +1,7 @@
 {
   "name": "dsh-council-promo",
   "version": "1.0.0",
-  "description": "DSH Council product film — real browser footage, beat-synced Remotion graphics",
+  "description": "DSH Council product film \u2014 real browser footage, beat-synced Remotion graphics",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
@@ -31,7 +31,8 @@
     "lint": "eslint src && tsc",
     "render": "remotion render CouncilFilm ../docs/assets/dsh-council-promo.mp4 --codec=h264 --crf=18 --concurrency=4",
     "still": "remotion still CouncilFilm ../docs/assets/demo-poster.jpg --frame=180 --image-format=jpeg",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "render:review": "remotion render CouncilFilm out/council-review.mp4 --codec=h264 --crf=18 --concurrency=4"
   },
   "sideEffects": [
     "*.css"

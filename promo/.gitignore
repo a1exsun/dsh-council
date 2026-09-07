@@ -3,3 +3,5 @@ node_modules/
 .env
 out/
 recordings/
+
+/public/audio/great-fairy-fountain-preview.mp3
