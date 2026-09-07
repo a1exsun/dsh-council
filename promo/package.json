@@ -1,0 +1,38 @@
+{
+  "name": "dsh-council-promo",
+  "version": "1.0.0",
+  "description": "DSH Council product film \u2014 real browser footage, beat-synced Remotion graphics",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@remotion/cli": "4.0.521",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.521",
+    "@remotion/media": "4.0.521",
+    "@remotion/three": "4.0.521",
+    "@react-three/fiber": "9.5.0",
+    "three": "0.183.2"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.521",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "eslint": "9.19.0",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3",
+    "@types/three": "0.183.1"
+  },
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "upgrade": "remotion upgrade",
+    "lint": "eslint src && tsc",
+    "render": "remotion render CouncilFilm ../docs/assets/dsh-council-promo.mp4 --codec=h264 --crf=18 --concurrency=4",
+    "still": "remotion still CouncilFilm ../docs/assets/demo-poster.jpg --frame=180 --image-format=jpeg",
+    "typecheck": "tsc --noEmit"
+  },
+  "sideEffects": [
+    "*.css"
+  ]
+}
