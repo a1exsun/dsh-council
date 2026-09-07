@@ -1,12 +1,25 @@
-# DSH Council
+<div align="center">
 
-**English** · [简体中文](README.zh.md)
+<p><strong>English</strong> · <a href="README.zh.md">简体中文</a></p>
+<h1>DSH Council</h1>
+<p><strong>Independent answers. Anonymous reviews. One reasoned decision.</strong></p>
+<p>Multi-model deliberation inside <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a>.</p>
 
-A multi-model council for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Get independent answers, compare them anonymously, and receive a final synthesis with an audit you can inspect.
+<p>
+<img src="https://img.shields.io/badge/DSH-plugin-6D5DFB?style=flat-square" alt="DSH plugin">
+<img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript">
+<img src="https://img.shields.io/badge/Node.js-22.19%2B%20%7C%2024%2B-339933?style=flat-square" alt="Node.js 22.19+ or 24+">
+<img src="https://img.shields.io/badge/languages-English%20%2F%20中文-222222?style=flat-square" alt="English and Chinese">
+</p>
+
+<p><a href="#installation">Installation</a> · <a href="#how-it-works">How it works</a> · <a href="#configuration">Configuration</a> · <a href="#contributing">Contributing</a></p>
 
 https://github.com/user-attachments/assets/c643490c-1076-4abe-a832-e10f02eb5eda
 
-<sub><a href="https://pub-f78f78d2a5b946ba86b28de8b5fe74e3.r2.dev/dsh-council-promo.2a531116217c.mp4">Download video</a> · <a href="promo/CREDITS.md">Video credits</a></sub>
+
+</div>
+
+---
 
 ## How it works
 

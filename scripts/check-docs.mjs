@@ -20,7 +20,6 @@ for (const file of ['README.md', 'README.zh.md', 'CONTRIBUTING.md', 'SECURITY.md
 for (const file of ['README.md', 'README.zh.md']) {
   const source = readFileSync(resolve(root, file), 'utf8')
   assert(source.includes(`\n\n${media.githubEmbedUrl}\n\n`), `${file}: missing standalone native video embed`)
-  assert(source.includes(`href="${media.video.url}"`), `${file}: missing persistent R2 original`)
   assert(!source.includes('demo-placeholder.svg'), `${file}: stale video placeholder`)
   assert(source.includes(file === 'README.md' ? 'README.zh.md' : 'README.md'), `${file}: missing language switch`)
 }

@@ -1,12 +1,25 @@
-# DSH Council
+<div align="center">
 
-[English](README.md) · **简体中文**
+<p><a href="README.md">English</a> · <strong>简体中文</strong></p>
+<h1>DSH Council</h1>
+<p><strong>独立作答，匿名互评，汇总裁决。</strong></p>
+<p>运行在 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 对话中的多模型议会插件。</p>
 
-运行在 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 中的多模型议会插件。让多个模型独立回答、匿名互评，最终给出综合结论与可检查的审计摘要。
+<p>
+<img src="https://img.shields.io/badge/DSH-plugin-6D5DFB?style=flat-square" alt="DSH 插件">
+<img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="严格 TypeScript">
+<img src="https://img.shields.io/badge/Node.js-22.19%2B%20%7C%2024%2B-339933?style=flat-square" alt="Node.js 22.19+ 或 24+">
+<img src="https://img.shields.io/badge/languages-English%20%2F%20中文-222222?style=flat-square" alt="英文与中文">
+</p>
+
+<p><a href="#安装">安装</a> · <a href="#工作流程">工作流程</a> · <a href="#配置">配置</a> · <a href="#参与贡献">参与贡献</a></p>
 
 https://github.com/user-attachments/assets/c643490c-1076-4abe-a832-e10f02eb5eda
 
-<sub><a href="https://pub-f78f78d2a5b946ba86b28de8b5fe74e3.r2.dev/dsh-council-promo.2a531116217c.mp4">下载视频</a> · <a href="promo/CREDITS.md">视频署名</a></sub>
+
+</div>
+
+---
 
 ## 工作流程
 
