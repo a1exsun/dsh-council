@@ -4,7 +4,8 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
-for (const file of ['README.md', 'README.zh.md', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/release-readiness.md']) {
+const media = JSON.parse(readFileSync(resolve(root, 'promo/hosting.json'), 'utf8'))
+for (const file of ['README.md', 'README.zh.md', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/release-readiness.md', 'promo/README.md']) {
   const path = resolve(root, file)
   const source = readFileSync(path, 'utf8')
   const withoutCode = source.replace(/```[\s\S]*?```/g, '')
@@ -18,8 +19,8 @@ for (const file of ['README.md', 'README.zh.md', 'CONTRIBUTING.md', 'SECURITY.md
 }
 for (const file of ['README.md', 'README.zh.md']) {
   const source = readFileSync(resolve(root, file), 'utf8')
-  assert(source.includes('docs/assets/dsh-council-promo.mp4'), `${file}: missing product film`)
-  assert(source.includes('docs/assets/demo-poster.jpg'), `${file}: missing video poster`)
+  assert(source.includes(`\n\n${media.githubEmbedUrl}\n\n`), `${file}: missing standalone native video embed`)
+  assert(source.includes(`href="${media.video.url}"`), `${file}: missing persistent R2 original`)
   assert(!source.includes('demo-placeholder.svg'), `${file}: stale video placeholder`)
   assert(source.includes(file === 'README.md' ? 'README.zh.md' : 'README.md'), `${file}: missing language switch`)
 }

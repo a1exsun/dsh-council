@@ -1,0 +1,14 @@
+{
+  "account": "Alex",
+  "accountId": "b5ee1671e54d7c7fcf17e90b9ca7741a",
+  "bucket": "dsh-council-media",
+  "video": {
+    "url": "https://pub-f78f78d2a5b946ba86b28de8b5fe74e3.r2.dev/dsh-council-promo.2a531116217c.mp4",
+    "sha256": "2a531116217cb4c3f976da3058c6ab4ef731f8f779a4b7ed6821ac2ee809afee"
+  },
+  "poster": {
+    "url": "https://pub-f78f78d2a5b946ba86b28de8b5fe74e3.r2.dev/demo-poster.2555be63de6c.jpg",
+    "sha256": "2555be63de6caa29414edb86033c44951b271d48e23f1566ed5b83cb3c49ffdc"
+  },
+  "githubEmbedUrl": "https://github.com/user-attachments/assets/c643490c-1076-4abe-a832-e10f02eb5eda"
+}

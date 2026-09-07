@@ -1,6 +1,6 @@
 # DSH Council product film
 
-[Watch the finished film](../docs/assets/dsh-council-promo.mp4).
+https://github.com/user-attachments/assets/c643490c-1076-4abe-a832-e10f02eb5eda
 
 English promotional film built in Remotion from actual Chrome recordings of the local DeepSeek Harness Council plugin. 1920 × 1080, 30 fps, 2,688 frames, 89.6 seconds. No voiceover. The music is **Cipher** by Kevin MacLeod, at 150 BPM; cuts, chapter shutters, and overlay entrances align to its 12-frame beat grid.
 
@@ -33,6 +33,22 @@ Output: `../docs/assets/dsh-council-promo.mp4` and `../docs/assets/demo-poster.j
 | 01:20.0 | Closing | `/council`, repository address, music attribution |
 
 Each chapter starts with a full-screen title and ends with a beat-aligned shutter. The source footage is trimmed and cropped; model waiting time is omitted. The command-result clips retain the host's native raw-text presentation. Overlays summarize the product or the recorded result, and do not impersonate app UI.
+
+## Persistent delivery
+
+The finished film and poster are stored in Cloudflare R2 under the **Alex** account, in the dedicated `dsh-council-media` bucket. [`hosting.json`](hosting.json) records the account, public URLs, and verified SHA-256 digests. No credentials are stored in the repository.
+
+GitHub sanitizes external `<video>` tags in repository Markdown. The READMEs therefore embed the identical file using GitHub's native video-attachment URL; `githubEmbedUrl` records this display copy. The R2 object remains the persistent original and is linked beside the player. Both URLs are stable; temporary GitHub CDN delivery tokens are never checked in. The video object is served as `video/mp4` with `Content-Disposition: inline` and supports HTTP byte ranges for seeking. The R2 URL is public and does not depend on an expiring signed token. The content hash in each object name allows immutable caching without serving stale video after a new release.
+
+To republish these exact artifacts from the repository root using the authenticated Wrangler CLI:
+
+```sh
+export CLOUDFLARE_ACCOUNT_ID=b5ee1671e54d7c7fcf17e90b9ca7741a
+npx --yes wrangler@4.129.0 r2 object put dsh-council-media/dsh-council-promo.2a531116217c.mp4 --remote --file docs/assets/dsh-council-promo.mp4 --content-type video/mp4 --content-disposition inline --cache-control 'public, max-age=31536000, immutable'
+npx --yes wrangler@4.129.0 r2 object put dsh-council-media/demo-poster.2555be63de6c.jpg --remote --file docs/assets/demo-poster.jpg --content-type image/jpeg --content-disposition inline --cache-control 'public, max-age=31536000, immutable'
+```
+
+For a newly rendered version, compute new SHA-256 digests, use their first 12 characters in new object names, upload the same file as a new GitHub video attachment, and update `hosting.json` and the video URLs in the READMEs together. Do not overwrite different bytes under an immutable object name.
 
 ## Recorded run
 
