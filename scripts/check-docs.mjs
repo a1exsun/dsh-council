@@ -18,8 +18,9 @@ for (const file of ['README.md', 'README.zh.md', 'CONTRIBUTING.md', 'SECURITY.md
 }
 for (const file of ['README.md', 'README.zh.md']) {
   const source = readFileSync(resolve(root, file), 'utf8')
-  assert(source.includes('DEMO VIDEO'), `${file}: missing video replacement marker`)
-  assert(source.includes('docs/assets/demo-placeholder.svg'), `${file}: missing video placeholder`)
+  assert(source.includes('docs/assets/dsh-council-promo.mp4'), `${file}: missing product film`)
+  assert(source.includes('docs/assets/demo-poster.jpg'), `${file}: missing video poster`)
+  assert(!source.includes('demo-placeholder.svg'), `${file}: stale video placeholder`)
   assert(source.includes(file === 'README.md' ? 'README.zh.md' : 'README.md'), `${file}: missing language switch`)
 }
 process.stdout.write('Documentation links and bilingual entry points passed.\n')

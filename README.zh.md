@@ -14,9 +14,10 @@
 
 <p><a href="#快速开始">快速开始</a> · <a href="#议会如何工作">工作流程</a> · <a href="#配置">配置</a> · <a href="#开发与测试">开发与测试</a></p>
 
-<!-- DEMO VIDEO：将占位图替换为上传到 GitHub 的视频链接，保留在 README 顶部。 -->
-<img src="docs/assets/demo-placeholder.svg" width="900" alt="演示视频占位：独立回答、匿名评审、最终裁决。视频待上传。">
-<p><sub>演示视频待上传 · 当前占位图不可播放。</sub></p>
+<!-- DEMO VIDEO：点击封面观看已渲染的产品宣传片。 -->
+<a href="docs/assets/dsh-council-promo.mp4"><img src="docs/assets/demo-poster.jpg" width="900" alt="观看 DSH Council 宣传片：独立回答、匿名评审与可检查的裁决。"></a>
+<p><a href="docs/assets/dsh-council-promo.mp4"><strong>▶ 观看产品宣传片</strong></a> · 1 分 30 秒 · 英文文案 · DSH 实际操作录屏</p>
+<p><sub>配乐：“Cipher” — Kevin MacLeod（<a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100844">incompetech.com</a>），<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>。已节选、剪辑并添加淡入淡出。<a href="promo/README.md">Remotion 源码与素材署名</a>。</sub></p>
 
 </div>
 

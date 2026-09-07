@@ -14,9 +14,10 @@
 
 <p><a href="#quick-start">Quick start</a> · <a href="#the-deliberation">How it works</a> · <a href="#configuration">Configuration</a> · <a href="#development">Development</a></p>
 
-<!-- DEMO VIDEO: replace this image with a GitHub-uploaded video URL. Keep this section near the top. -->
-<img src="docs/assets/demo-placeholder.svg" width="900" alt="Demo video placeholder: answer, review, decide. Video coming soon.">
-<p><sub>Demo video coming soon · This placeholder is not a playable video.</sub></p>
+<!-- DEMO VIDEO: the poster links to the rendered product film. -->
+<a href="docs/assets/dsh-council-promo.mp4"><img src="docs/assets/demo-poster.jpg" width="900" alt="Watch DSH Council: independent answers, anonymous reviews, and an inspectable decision."></a>
+<p><a href="docs/assets/dsh-council-promo.mp4"><strong>▶ Watch the product film</strong></a> · 1:30 · English · Real DSH recordings</p>
+<p><sub>Music: “Cipher” — Kevin MacLeod (<a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100844">incompetech.com</a>), <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Excerpt edited and faded. <a href="promo/README.md">Remotion source and credits</a>.</sub></p>
 
 </div>
 
