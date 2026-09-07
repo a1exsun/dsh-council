@@ -117,8 +117,8 @@ export const CouncilFilm = () => <AbsoluteFill style={{fontFamily:'Inter, sans-s
   <Sequence durationInFrames={192}><Intro/></Sequence>
   <Sequence from={192} durationInFrames={ENTRY_DURATION}><Chapter number="01" title="Start with /council." strap="New conversation. One command. Your question." duration={ENTRY_DURATION}
     shots={[
-      {src:'00-entry-command',from:60,duration:72,crop:[0,0,1600,900]},
-      {src:'00-entry-command',from:132,duration:108,trim:72,crop:[480,260,940,500]},
+      {src:'00-entry-command',from:36,duration:96,crop:[0,0,1600,900]},
+      {src:'00-entry-command',from:132,duration:108,trim:96,crop:[480,260,940,500]},
       {src:'00-entry-open',from:240,duration:36,crop:[0,0,1600,900]},
       {src:'00-entry-topic-navigation',from:276,duration:84,crop:[0,0,1600,900]},
       {src:'00-entry-question',from:360,duration:360,crop:[490,275,900,480]},
