@@ -2,6 +2,7 @@
   "name": "@a1exsun/dsh-council",
   "version": "0.1.0",
   "description": "Multi-model council deliberation for DeepSeek Harness",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/a1exsun/dsh-council.git"
@@ -34,6 +35,7 @@
   },
   "files": [
     "lib/",
+    "LICENSE",
     "cordis.patch.yml",
     "README.md",
     "README.zh.md",

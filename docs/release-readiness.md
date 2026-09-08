@@ -33,7 +33,7 @@ This record covers the first public release preparation. It distinguishes determ
 
 ## Before publishing
 
-- [ ] Choose the open-source license and add `LICENSE` plus package metadata.
+- [x] Choose the MIT license and add `LICENSE` plus package metadata.
 - [x] Confirm the GitHub owner/repository and add repository, homepage, and issue links.
 - [x] Upload the demo video; replace the `DEMO VIDEO` placeholder in both READMEs.
 - [ ] Enable private vulnerability reporting on GitHub.
