@@ -41,7 +41,9 @@
     "README.zh.md",
     "CONTRIBUTING.md",
     "SECURITY.md",
-    "docs/"
+    "docs/release-readiness.md",
+    "docs/assets/codebestie-banner.svg",
+    "docs/assets/codebestie-banner.zh.svg"
   ],
   "scripts": {
     "build": "tsdown",
