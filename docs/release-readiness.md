@@ -27,17 +27,28 @@ This record covers the first public release preparation. It distinguishes determ
 - Type checking and production build: `pnpm check`.
 - Local coverage after the review: 62 tests; 98.1% lines, 90.58% branches. Coverage thresholds are lower bounds, not claims that untested behavior is correct.
 - Peer dependency validation: `pnpm peers check`.
-- Packed integration: `pnpm test:host` passed against npm DSH `0.1.2-rc.1`: two complete councils, eight child model requests, eight denied out-of-scope tool probes, and two cold session reloads. It checks a blank English session, an existing Chinese conversation, structured submission, parent-history isolation, and model-free retention. The README configuration example is applied in the actual host.
+- Packed integration: `pnpm test:host` installs the scoped tarball through `dsh plugin --profile web add` in a disposable home and checks automatic bundle activation. The runtime checks cover two complete councils, eight child model requests, eight denied out-of-scope tool probes, and two cold session reloads: a blank English session, an existing Chinese conversation, structured submission, parent-history isolation, and model-free retention. The README configuration example is applied in the actual host.
 - Provider responses in the host test are deterministic fixtures. This does not certify live API availability, benchmark performance, model quality, or adherence to the advisory Web-call budget.
-- GitHub Actions checks Node.js 22 and 24 and includes a separate latest-DSH integration job. Remote workflow execution happens after publication; local checks do not imply a hosted CI run has passed.
+- GitHub Actions checks Node.js 22 and 24 and includes a separate latest-DSH integration job. CI runs on pushes and pull requests; local checks do not imply a hosted CI run has passed.
 
 ## Before publishing
 
 - [ ] Choose the open-source license and add `LICENSE` plus package metadata.
-- [ ] Confirm the GitHub owner/repository and add repository, homepage, and issue links.
-- [ ] Upload the demo video; replace the `DEMO VIDEO` placeholder in both READMEs.
+- [x] Confirm the GitHub owner/repository and add repository, homepage, and issue links.
+- [x] Upload the demo video; replace the `DEMO VIDEO` placeholder in both READMEs.
 - [ ] Enable private vulnerability reporting on GitHub.
 - [x] Review the tarball contents and run the complete verification commands above.
 - [ ] Push the reviewed commits, allow CI to finish, then create the initial release.
 
-The current source is prepared for review; no GitHub repository, release, or npm publication is created by these scripts. SDK dependencies record a tested snapshot, while the host integration test resolves npm `latest` each time. Web is the supported interactive entry point; a bare headless profile does not register the sidebar metadata projection used for new-session retention.
+## Publish to npm
+
+The public package is `@a1exsun/dsh-council`. Authenticate with an npm account authorized to publish in the `@a1exsun` scope. After the checks above pass for the committed release:
+
+```sh
+npm login --registry=https://registry.npmjs.org/
+npm publish --access public
+```
+
+The `prepack` script builds `lib/` before packing or publishing. Registry installations use that prebuilt output and do not run a plugin build. `publishConfig` selects the public npm registry and public visibility. CI validates changes without publishing automatically.
+
+SDK dependencies record a tested snapshot, while the host integration test resolves npm `latest` each time. Web is the supported interactive entry point; a bare headless profile does not register the sidebar metadata projection used for new-session retention.

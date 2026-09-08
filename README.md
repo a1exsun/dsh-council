@@ -67,21 +67,16 @@ Install [DeepSeek Harness (dsh)](https://www.deepseek.com/harness/) by following
 </tr>
 </table>
 
-<details open>
-<summary><strong>Install from source</strong></summary>
+Install the prebuilt package from npm:
 
 ```sh
-git clone https://github.com/a1exsun/dsh-council.git
-cd dsh-council
-pnpm install --frozen-lockfile
-pnpm build
-npx --yes @deepseek-ai/dsh@latest plugin --profile web add .
+npx --yes @deepseek-ai/dsh@latest plugin --profile web add @a1exsun/dsh-council@0.1.0
 npx --yes @deepseek-ai/dsh@latest web
 ```
 
 <blockquote><p>Restart DSH Web if it is already running.</p></blockquote>
 
-</details>
+No source checkout or compilation is required. See [Contributing](CONTRIBUTING.md) for development setup.
 
 ## Need more model providers?
 

@@ -1,7 +1,19 @@
 {
-  "name": "dsh-council",
+  "name": "@a1exsun/dsh-council",
   "version": "0.1.0",
   "description": "Multi-model council deliberation for DeepSeek Harness",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/a1exsun/dsh-council.git"
+  },
+  "homepage": "https://github.com/a1exsun/dsh-council#readme",
+  "bugs": {
+    "url": "https://github.com/a1exsun/dsh-council/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",
@@ -31,7 +43,7 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "prepare": "pnpm --ignore-workspace run build",
+    "prepack": "pnpm run build",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",

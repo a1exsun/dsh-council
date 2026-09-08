@@ -5,11 +5,23 @@
 Use Node.js `^22.19.0 || >=24.0.0` and pnpm 11.7.0.
 
 ```sh
+git clone https://github.com/a1exsun/dsh-council.git
+cd dsh-council
 pnpm install --frozen-lockfile
 pnpm check
 pnpm test:coverage
 pnpm test:host
 ```
+
+To load your local checkout into DSH Web:
+
+```sh
+pnpm build
+npx --yes @deepseek-ai/dsh@latest plugin --profile web add .
+npx --yes @deepseek-ai/dsh@latest web
+```
+
+Rebuild after source changes and restart DSH Web to load them.
 
 The host test downloads npm's current DSH release into a disposable environment. It uses fixture responses and needs no API credentials. Never include credentials or personal DSH profiles in tests.
 

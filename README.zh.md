@@ -67,21 +67,16 @@ https://github.com/user-attachments/assets/e81dfa36-5d93-4efb-8c67-015a5e4d2179
 </tr>
 </table>
 
-<details open>
-<summary><strong>从源码安装</strong></summary>
+从 npm 安装已编译的插件包：
 
 ```sh
-git clone https://github.com/a1exsun/dsh-council.git
-cd dsh-council
-pnpm install --frozen-lockfile
-pnpm build
-npx --yes @deepseek-ai/dsh@latest plugin --profile web add .
+npx --yes @deepseek-ai/dsh@latest plugin --profile web add @a1exsun/dsh-council@0.1.0
 npx --yes @deepseek-ai/dsh@latest web
 ```
 
 <blockquote><p>如果 DSH Web 已在运行，请重启。</p></blockquote>
 
-</details>
+无需克隆源码或编译。开发环境设置请参阅[贡献指南](CONTRIBUTING.md)。
 
 ## 需要更多模型 provider？
 
