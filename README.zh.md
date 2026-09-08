@@ -48,6 +48,12 @@ https://github.com/user-attachments/assets/e81dfa36-5d93-4efb-8c67-015a5e4d2179
 
 ## 安装
 
+### 1. 安装 DSH
+
+前往 [DeepSeek Harness（dsh）官网](https://www.deepseek.com/harness/)，按照官方指南完成安装。
+
+### 2. 安装 DSH Council
+
 <table>
 <tr>
 <th>Node.js</th>
@@ -76,6 +82,19 @@ npx --yes @deepseek-ai/dsh@latest web
 <blockquote><p>如果 DSH Web 已在运行，请重启。</p></blockquote>
 
 </details>
+
+## 需要更多模型 provider？
+
+<table>
+<tr>
+<td align="center" width="100%">
+<h3>CodeBestie</h3>
+<p>为你的多模型议会探索更多模型服务。</p>
+<p><a href="https://app.codebestie.org/register?aff=RA3Z7CMJW2SS"><strong>前往 CodeBestie 注册 →</strong></a></p>
+<p>注册时请填写邀请码：<code>RA3Z7CMJW2SS</code></p>
+</td>
+</tr>
+</table>
 
 ## 使用
 

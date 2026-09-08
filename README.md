@@ -48,6 +48,12 @@ https://github.com/user-attachments/assets/e81dfa36-5d93-4efb-8c67-015a5e4d2179
 
 ## Installation
 
+### 1. Install DSH
+
+Install [DeepSeek Harness (dsh)](https://www.deepseek.com/harness/) by following the official installation guide.
+
+### 2. Install DSH Council
+
 <table>
 <tr>
 <th>Node.js</th>
@@ -76,6 +82,19 @@ npx --yes @deepseek-ai/dsh@latest web
 <blockquote><p>Restart DSH Web if it is already running.</p></blockquote>
 
 </details>
+
+## Need more model providers?
+
+<table>
+<tr>
+<td align="center" width="100%">
+<h3>CodeBestie</h3>
+<p>Explore more model providers for your council.</p>
+<p><a href="https://app.codebestie.org/register?aff=RA3Z7CMJW2SS"><strong>Register with CodeBestie →</strong></a></p>
+<p>When registering, enter invitation code: <code>RA3Z7CMJW2SS</code></p>
+</td>
+</tr>
+</table>
 
 ## Usage
 
