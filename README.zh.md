@@ -85,16 +85,10 @@ npx --yes @deepseek-ai/dsh@latest web
 
 ## 需要更多模型 provider？
 
-<table>
-<tr>
-<td align="center" width="100%">
-<h3>CodeBestie</h3>
-<p>为你的多模型议会探索更多模型服务。</p>
-<p><a href="https://app.codebestie.org/register?aff=RA3Z7CMJW2SS"><strong>前往 CodeBestie 注册 →</strong></a></p>
-<p>注册时请填写邀请码：<code>RA3Z7CMJW2SS</code></p>
-</td>
-</tr>
-</table>
+<a href="https://app.codebestie.org/register?aff=RA3Z7CMJW2SS">
+<img src="docs/assets/codebestie-banner.zh.svg" width="100%" alt="CodeBestie — 探索更多模型服务。注册时请填写邀请码 RA3Z7CMJW2SS。">
+</a>
+<p align="center">注册时请填写邀请码：<strong><code>RA3Z7CMJW2SS</code></strong></p>
 
 ## 使用
 

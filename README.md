@@ -85,16 +85,10 @@ npx --yes @deepseek-ai/dsh@latest web
 
 ## Need more model providers?
 
-<table>
-<tr>
-<td align="center" width="100%">
-<h3>CodeBestie</h3>
-<p>Explore more model providers for your council.</p>
-<p><a href="https://app.codebestie.org/register?aff=RA3Z7CMJW2SS"><strong>Register with CodeBestie →</strong></a></p>
-<p>When registering, enter invitation code: <code>RA3Z7CMJW2SS</code></p>
-</td>
-</tr>
-</table>
+<a href="https://app.codebestie.org/register?aff=RA3Z7CMJW2SS">
+<img src="docs/assets/codebestie-banner.svg" width="100%" alt="CodeBestie — explore more model providers. Register with invitation code RA3Z7CMJW2SS.">
+</a>
+<p align="center">When registering, enter invitation code: <strong><code>RA3Z7CMJW2SS</code></strong></p>
 
 ## Usage
 

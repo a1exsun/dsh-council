@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title description">
+  <title id="title">CodeBestie — more models, more perspectives</title>
+  <desc id="description">Explore more model providers. Register with invitation code RA3Z7CMJW2SS.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1">
+      <stop stop-color="#101b38"/>
+      <stop offset=".55" stop-color="#24204e"/>
+      <stop offset="1" stop-color="#452968"/>
+    </linearGradient>
+    <linearGradient id="accent">
+      <stop stop-color="#67e8f9"/>
+      <stop offset=".5" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#fb91c8"/>
+    </linearGradient>
+    <linearGradient id="button" x2="1" y2="1">
+      <stop stop-color="#d9f99d"/>
+      <stop offset="1" stop-color="#5eead4"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop stop-color="#a78bfa" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#a78bfa" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="bounds"><rect width="1200" height="320" rx="24"/></clipPath>
+  </defs>
+  <g clip-path="url(#bounds)">
+    <rect width="1200" height="320" fill="url(#background)"/>
+    <ellipse cx="1040" cy="100" rx="430" ry="330" fill="url(#glow)"/>
+    <circle cx="1160" cy="300" r="265" fill="none" stroke="#c4b5fd" stroke-opacity=".1"/>
+    <circle cx="1160" cy="300" r="220" fill="none" stroke="#c4b5fd" stroke-opacity=".1"/>
+    <circle cx="1160" cy="300" r="175" fill="none" stroke="#c4b5fd" stroke-opacity=".1"/>
+    <path d="M700 0 570 320" stroke="#c4b5fd" stroke-opacity=".08"/>
+    <rect width="1200" height="5" fill="url(#accent)"/>
+    <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif">
+      <circle cx="65" cy="57" r="5" fill="#5eead4"/>
+      <text x="82" y="63" fill="#a5f3fc" font-size="16" font-weight="600" letter-spacing="3">MODEL PROVIDERS</text>
+      <text x="60" y="144" fill="#ffffff" font-size="72" font-weight="750" letter-spacing="-3">CodeBestie</text>
+      <text x="62" y="187" fill="#d8def5" font-size="27">More models. More perspectives.</text>
+      <rect x="60" y="224" width="286" height="56" rx="14" fill="url(#button)"/>
+      <text x="86" y="260" fill="#102537" font-size="21" font-weight="700">Join CodeBestie</text>
+      <path d="M303 252h18m-7-7 7 7-7 7" fill="none" stroke="#102537" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="754" y="77" width="386" height="171" rx="20" fill="#ffffff" fill-opacity=".07" stroke="#c4b5fd" stroke-opacity=".35"/>
+      <rect x="778" y="102" width="8" height="8" rx="2" fill="#f9a8d4"/>
+      <text x="798" y="113" fill="#e9d5ff" font-size="15" font-weight="600" letter-spacing="2">INVITATION CODE</text>
+      <text x="779" y="163" fill="#ffffff" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="31" font-weight="700" letter-spacing="1">RA3Z7CMJW2SS</text>
+      <path d="M779 184h336" stroke="#c4b5fd" stroke-opacity=".22"/>
+      <text x="779" y="218" fill="#ddd6fe" font-size="19">Enter this code at sign-up</text>
+    </g>
+    <circle cx="723" cy="267" r="6" fill="#67e8f9"/>
+    <circle cx="1160" cy="51" r="5" fill="#f9a8d4"/>
+    <path d="M1105 270v12m-6-6h12" stroke="#d9f99d" stroke-width="2" stroke-linecap="round"/>
+    <rect x=".5" y=".5" width="1199" height="319" rx="23.5" fill="none" stroke="#a78bfa" stroke-opacity=".28"/>
+  </g>
+</svg>
