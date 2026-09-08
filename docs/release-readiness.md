@@ -2,6 +2,12 @@
 
 This record covers the first public release preparation. It distinguishes deterministic regression checks from model-quality evaluation.
 
+## npm release 0.1.0
+
+Published [@a1exsun/dsh-council@0.1.0](https://www.npmjs.com/package/@a1exsun/dsh-council/v/0.1.0) publicly under MIT on 2026-09-08. The package is 43.3 kB compressed and includes prebuilt code, declarations, plugin configuration, the license, and documentation.
+
+Release source: `5b6b87d0df0ab580b67ca1e00a48fa3a5e722e73`; [all CI jobs passed](https://github.com/a1exsun/dsh-council/actions/runs/34197364500). After publication, an anonymous registry download matched the uploaded tarball's SHA-512 integrity. A fresh DSH `0.1.2-rc.1` profile installed the package by its npm name and exact version, activated its bundle, and passed both Council runs and the persistence checks described below.
+
 ## Review findings addressed
 
 | Area | Finding | Resolution |
@@ -38,7 +44,7 @@ This record covers the first public release preparation. It distinguishes determ
 - [x] Upload the demo video; replace the `DEMO VIDEO` placeholder in both READMEs.
 - [ ] Enable private vulnerability reporting on GitHub.
 - [x] Review the tarball contents and run the complete verification commands above.
-- [ ] Push the reviewed commits, allow CI to finish, then create the initial release.
+- [x] Push the reviewed commits, allow CI to finish, then publish the initial npm release.
 
 ## Publish to npm
 
