@@ -78,13 +78,6 @@ npx --yes @deepseek-ai/dsh@latest web
 
 No source checkout or compilation is required. See [Contributing](CONTRIBUTING.md) for development setup.
 
-## Need more model providers?
-
-<a href="https://app.codebestie.org/register?aff=RA3Z7CMJW2SS">
-<img src="docs/assets/codebestie-banner.svg" width="100%" alt="CodeBestie — explore more model providers. Register with invitation code RA3Z7CMJW2SS.">
-</a>
-<p align="center">When registering, enter invitation code: <strong><code>RA3Z7CMJW2SS</code></strong></p>
-
 ## Usage
 
 Enter this command in a DSH Web conversation:
@@ -129,6 +122,12 @@ Enter this command in a DSH Web conversation:
 </td>
 </tr>
 </table>
+
+## Need more AI models?
+
+<a href="https://app.codebestie.org/register?aff=RA3Z7CMJW2SS">
+<img src="docs/assets/codebestie-banner.svg" width="100%" alt="CodeBestie — explore more model providers. Register with invitation code RA3Z7CMJW2SS.">
+</a>
 
 ## Configuration
 
